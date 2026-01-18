@@ -64,18 +64,6 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    .demo-logins {
-      background: #f8f9fa;
-      border-radius: 12px;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-      border: 1px dashed #dee2e6;
-    }
-    .demo-login-btn {
-      font-size: 0.8rem;
-      padding: 0.35rem 0.6rem;
-      border-radius: 8px;
-    }
     .divider {
       display: flex;
       align-items: center;
@@ -161,22 +149,6 @@
         <% } %>
       </div>
 
-      <!-- Demo Logins -->
-      <div class="demo-logins">
-        <h6 class="mb-2"><i class="bi bi-key me-1"></i>Demo Logins</h6>
-        <div class="d-flex flex-wrap gap-1">
-          <button type="button" class="btn btn-outline-primary demo-login-btn" id="demoAdminBtn" data-bs-toggle="tooltip" title="Elite Writing - Company Admin">
-            <i class="bi bi-person-fill"></i> John (Admin)
-          </button>
-          <button type="button" class="btn btn-outline-secondary demo-login-btn" id="demoManagerBtn" data-bs-toggle="tooltip" title="Elite Writing - Sales Manager">
-            <i class="bi bi-person"></i> Sarah (Manager)
-          </button>
-          <button type="button" class="btn btn-outline-dark demo-login-btn" id="demoSuperBtn" data-bs-toggle="tooltip" title="Platform Super Admin">
-            <i class="bi bi-shield-lock"></i> Super Admin
-          </button>
-        </div>
-      </div>
-
       <form method="POST" action="<%= basePath %>/admin/login" id="loginForm">
         <input type="hidden" name="redirect" value="<%= typeof redirect !== 'undefined' ? redirect : basePath + '/admin' %>">
 
@@ -243,13 +215,6 @@
     (function() {
       var basePath = '<%= basePath %>';
 
-      // Fill demo login credentials
-      function fillLogin(email, password) {
-        document.getElementById('email').value = email;
-        document.getElementById('password').value = password;
-        showAlert('Credentials filled! Click Sign In to continue.', 'info');
-      }
-
       // Toggle password visibility
       function togglePassword() {
         var field = document.getElementById('password');
@@ -263,32 +228,11 @@
         }
       }
 
-      // Show alert
-      function showAlert(message, type) {
-        type = type || 'danger';
-        var container = document.getElementById('alertContainer');
-        container.innerHTML = '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' +
-          message +
-          '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
-          '</div>';
-      }
-
       // Wait for DOM to be ready
       document.addEventListener('DOMContentLoaded', function() {
         // Initialize tooltips
         var tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
         tooltipTriggerList.forEach(function(el) { new bootstrap.Tooltip(el); });
-
-        // Demo login buttons
-        document.getElementById('demoAdminBtn').addEventListener('click', function() {
-          fillLogin('john@elitewriting.com', 'Demo123!');
-        });
-        document.getElementById('demoManagerBtn').addEventListener('click', function() {
-          fillLogin('sarah@elitewriting.com', 'Demo123!');
-        });
-        document.getElementById('demoSuperBtn').addEventListener('click', function() {
-          fillLogin('admin@apexsalesai.com', 'Admin123!');
-        });
 
         // Password toggle
         document.getElementById('passwordToggle').addEventListener('click', function() {
