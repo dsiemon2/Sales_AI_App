@@ -1,0 +1,314 @@
+<%- include('../../layouts/admin', { body: `
+
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-toggles me-2"></i>Features</h1>
+      <p class="text-muted mb-0">Enable or disable platform features</p>
+    </div>
+  </div>
+
+  <form id="featuresForm">
+    <div class="row g-4">
+      <!-- Training Features -->
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-mortarboard me-2"></i>Training Features</h5>
+          </div>
+          <div class="card-body">
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="voiceTraining" name="voiceTraining" ${features?.voiceTraining !== false ? 'checked' : ''}>
+              <label class="form-check-label" for="voiceTraining">
+                <strong>Voice Training</strong>
+                <small class="text-muted d-block">Enable voice-based training sessions</small>
+              </label>
+            </div>
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="realTimeCoaching" name="realTimeCoaching" ${features?.realTimeCoaching !== false ? 'checked' : ''}>
+              <label class="form-check-label" for="realTimeCoaching">
+                <strong>Real-time Coaching</strong>
+                <small class="text-muted d-block">AI provides feedback during sessions</small>
+              </label>
+            </div>
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="rolePlay" name="rolePlay" ${features?.rolePlay !== false ? 'checked' : ''}>
+              <label class="form-check-label" for="rolePlay">
+                <strong>Role Play Mode</strong>
+                <small class="text-muted d-block">AI acts as customer persona</small>
+              </label>
+            </div>
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="leaderboard" name="leaderboard" ${features?.leaderboard ? 'checked' : ''}>
+              <label class="form-check-label" for="leaderboard">
+                <strong>Leaderboard</strong>
+                <small class="text-muted d-block">Show trainee performance rankings</small>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Communication Features -->
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-chat-dots me-2"></i>Communication Features</h5>
+          </div>
+          <div class="card-body">
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="smsNotifications" name="smsNotifications" ${features?.smsNotifications ? 'checked' : ''}>
+              <label class="form-check-label" for="smsNotifications">
+                <strong>SMS Notifications</strong>
+                <small class="text-muted d-block">Send SMS alerts and reminders</small>
+              </label>
+            </div>
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="emailNotifications" name="emailNotifications" ${features?.emailNotifications !== false ? 'checked' : ''}>
+              <label class="form-check-label" for="emailNotifications">
+                <strong>Email Notifications</strong>
+                <small class="text-muted d-block">Send email updates and reports</small>
+              </label>
+            </div>
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="webhooks" name="webhooks" ${features?.webhooks ? 'checked' : ''}>
+              <label class="form-check-label" for="webhooks">
+                <strong>Webhooks</strong>
+                <small class="text-muted d-block">Enable webhook integrations</small>
+              </label>
+            </div>
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="pushNotifications" name="pushNotifications" ${features?.pushNotifications ? 'checked' : ''}>
+              <label class="form-check-label" for="pushNotifications">
+                <strong>Push Notifications</strong>
+                <small class="text-muted d-block">Browser push notifications</small>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Gateway (Link to dedicated page) -->
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-credit-card me-2"></i>Payment Processing</h5>
+            <a href="${basePath}/admin/payment-configurations?token=${token}" class="btn btn-primary btn-sm">
+              <i class="bi bi-gear me-1"></i>Configure Payment Gateways
+            </a>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-0">
+              Configure Stripe, Braintree, Square, and Authorize.net payment gateways.
+              <a href="${basePath}/admin/payment-configurations?token=${token}">Go to Payment Configuration &rarr;</a>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Chat Configuration -->
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-chat-left-text me-2"></i>Live Chat Configuration</h5>
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" id="liveChatEnabled" name="liveChatEnabled" ${features?.liveChatEnabled ? 'checked' : ''}>
+              <label class="form-check-label" for="liveChatEnabled">Enable</label>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label class="form-label">Chat Provider</label>
+              <select name="chatProvider" class="form-select">
+                <option value="builtin" ${features?.chatProvider === 'builtin' || !features?.chatProvider ? 'selected' : ''}>Built-in Chat</option>
+                <option value="intercom" ${features?.chatProvider === 'intercom' ? 'selected' : ''}>Intercom</option>
+                <option value="zendesk" ${features?.chatProvider === 'zendesk' ? 'selected' : ''}>Zendesk Chat</option>
+                <option value="crisp" ${features?.chatProvider === 'crisp' ? 'selected' : ''}>Crisp</option>
+                <option value="tawk" ${features?.chatProvider === 'tawk' ? 'selected' : ''}>Tawk.to</option>
+                <option value="drift" ${features?.chatProvider === 'drift' ? 'selected' : ''}>Drift</option>
+                <option value="livechat" ${features?.chatProvider === 'livechat' ? 'selected' : ''}>LiveChat</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Widget ID / App ID</label>
+              <input type="text" name="chatWidgetId" class="form-control" value="${features?.chatWidgetId || ''}" placeholder="Enter your widget or app ID">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Custom Script URL</label>
+              <input type="url" name="chatScriptUrl" class="form-control" value="${features?.chatScriptUrl || ''}" placeholder="https://...">
+              <small class="text-muted">Optional: Custom chat widget script URL</small>
+            </div>
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="chatShowOnMobile" name="chatShowOnMobile" ${features?.chatShowOnMobile !== false ? 'checked' : ''}>
+              <label class="form-check-label" for="chatShowOnMobile">Show on Mobile Devices</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Social Media Configuration -->
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-share me-2"></i>Social Media Configuration</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label"><i class="bi bi-facebook me-1"></i> Facebook</label>
+                <input type="url" name="facebookUrl" class="form-control" value="${features?.facebookUrl || ''}" placeholder="https://facebook.com/...">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label"><i class="bi bi-twitter-x me-1"></i> Twitter / X</label>
+                <input type="url" name="twitterUrl" class="form-control" value="${features?.twitterUrl || ''}" placeholder="https://twitter.com/...">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label"><i class="bi bi-instagram me-1"></i> Instagram</label>
+                <input type="url" name="instagramUrl" class="form-control" value="${features?.instagramUrl || ''}" placeholder="https://instagram.com/...">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label"><i class="bi bi-linkedin me-1"></i> LinkedIn</label>
+                <input type="url" name="linkedinUrl" class="form-control" value="${features?.linkedinUrl || ''}" placeholder="https://linkedin.com/...">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label"><i class="bi bi-youtube me-1"></i> YouTube</label>
+                <input type="url" name="youtubeUrl" class="form-control" value="${features?.youtubeUrl || ''}" placeholder="https://youtube.com/...">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label"><i class="bi bi-tiktok me-1"></i> TikTok</label>
+                <input type="url" name="tiktokUrl" class="form-control" value="${features?.tiktokUrl || ''}" placeholder="https://tiktok.com/@...">
+              </div>
+              <div class="col-12">
+                <hr>
+                <h6>Share Buttons</h6>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="shareButtonsEnabled" name="shareButtonsEnabled" ${features?.shareButtonsEnabled ? 'checked' : ''}>
+                  <label class="form-check-label" for="shareButtonsEnabled">Enable Share Buttons</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="socialIconsInFooter" name="socialIconsInFooter" ${features?.socialIconsInFooter !== false ? 'checked' : ''}>
+                  <label class="form-check-label" for="socialIconsInFooter">Show Icons in Footer</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ Section -->
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-question-circle me-2"></i>FAQ Section</h5>
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" id="faqEnabled" name="faqEnabled" ${features?.faqEnabled ? 'checked' : ''}>
+              <label class="form-check-label" for="faqEnabled">Enable</label>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-3">Display FAQ section on public-facing pages</p>
+            <div class="mb-3">
+              <label class="form-label">FAQ Page Title</label>
+              <input type="text" name="faqTitle" class="form-control" value="${features?.faqTitle || 'Frequently Asked Questions'}" placeholder="FAQ Title">
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="faqShowInNav" name="faqShowInNav" ${features?.faqShowInNav ? 'checked' : ''}>
+              <label class="form-check-label" for="faqShowInNav">Show in Navigation</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sticky Bar -->
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-window-dock me-2"></i>Sticky Bar</h5>
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" id="stickyBarEnabled" name="stickyBarEnabled" ${features?.stickyBarEnabled ? 'checked' : ''}>
+              <label class="form-check-label" for="stickyBarEnabled">Enable</label>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Bar Text</label>
+                <input type="text" name="stickyBarText" class="form-control" value="${features?.stickyBarText || ''}" placeholder="Special announcement or promotion...">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Background Color</label>
+                <div class="input-group">
+                  <input type="color" name="stickyBarBgColor" class="form-control form-control-color" value="${features?.stickyBarBgColor || '#2563eb'}">
+                  <input type="text" class="form-control color-text" value="${features?.stickyBarBgColor || '#2563eb'}" readonly>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Link URL</label>
+                <input type="url" name="stickyBarLink" class="form-control" value="${features?.stickyBarLink || ''}" placeholder="https://...">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Link Text</label>
+                <input type="text" name="stickyBarLinkText" class="form-control" value="${features?.stickyBarLinkText || ''}" placeholder="Learn More">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check-lg me-1"></i> Save Features
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  const basePath = '${basePath}';
+  const token = '${token || ''}';
+
+  // Color picker sync
+  document.querySelectorAll('input[type="color"]').forEach(colorInput => {
+    colorInput.addEventListener('input', (e) => {
+      const textInput = e.target.parentElement.querySelector('.color-text');
+      if (textInput) textInput.value = e.target.value;
+    });
+  });
+
+  // Form submission
+  document.getElementById('featuresForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const data = Object.fromEntries(new FormData(form));
+
+    // Convert checkboxes to booleans
+    const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+      data[cb.name] = cb.checked;
+    });
+
+    try {
+      const res = await fetch(basePath + '/admin/features/save?token=' + token, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (res.ok) {
+        alert('Features saved successfully');
+      } else {
+        const result = await res.json();
+        alert(result.error || 'Failed to save features');
+      }
+    } catch (err) {
+      alert('Error saving features');
+    }
+  });
+</script>
+
+` }) %>

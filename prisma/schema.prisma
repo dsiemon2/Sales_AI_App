@@ -1,0 +1,1373 @@
+// ===========================================
+// Apex Sales Training AI - Prisma Schema
+// ===========================================
+// PostgreSQL + Multi-tenant Architecture
+// ===========================================
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// INDUSTRIES - Available industry templates
+// ============================================
+model Industry {
+  id              String    @id @default(cuid())
+  code            String    @unique  // pen, salon, auto, western, insurance, solar, etc.
+  name            String              // "General Sales (Pen)", "Beauty Salon", etc.
+  description     String?
+  icon            String    @default("bi-briefcase")
+  colorPrimary    String    @default("#2563eb")
+  colorSecondary  String    @default("#1d4ed8")
+  colorAccent     String    @default("#3b82f6")
+  heroImage       String?
+  thumbnailImage  String?
+  isActive        Boolean   @default(true)
+  sortOrder       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  companies       Company[]
+  templates       IndustryTemplate[]
+  branding        IndustryBranding?
+  announcements   Announcement[]
+  banners         Banner[]
+
+  @@index([code])
+  @@index([isActive])
+}
+
+model IndustryTemplate {
+  id              String    @id @default(cuid())
+  industryId      String
+  industry        Industry  @relation(fields: [industryId], references: [id], onDelete: Cascade)
+  templateType    String    // products, techniques, discovery_questions, objections, closings, scripts, menu_config
+  templateData    Json      // JSON template data
+  sortOrder       Int       @default(0)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([industryId, templateType])
+}
+
+// ============================================
+// COMPANIES - Tenants
+// ============================================
+model Company {
+  id                 String    @id @default(cuid())
+  name               String
+  slug               String    @unique
+  domain             String?   @unique
+  industryId         String
+  industry           Industry  @relation(fields: [industryId], references: [id])
+
+  // Subscription & Billing
+  subscriptionTier   String    @default("starter")  // starter, professional, business, enterprise
+  subscriptionStatus String    @default("trial")    // trial, active, cancelled, expired, suspended
+  trialEndsAt        DateTime?
+  subscriptionEndsAt DateTime?
+  stripeCustomerId   String?
+  stripeSubscriptionId String?
+
+  // Settings
+  settings           Json      @default("{}")
+  timezone           String    @default("America/New_York")
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  // Relations
+  users              User[]
+  branding           CompanyBranding?
+  storeInfo          CompanyStoreInfo?
+  features           CompanyFeatures?
+  paymentSettings    CompanyPaymentSettings?
+  products           Product[]
+  techniques         SalesTechnique[]
+  discoveryQuestions DiscoveryQuestion[]
+  closingStrategies  ClosingStrategy[]
+  objectionHandlers  ObjectionHandler[]
+  sessions           SalesSession[]
+  knowledgeBase      KnowledgeArticle[]
+  aiConfig           AIConfig?
+  aiAgents           AIAgent[]
+  aiTools            AITool[]
+  // Industry-specific
+  vehicles           Vehicle[]
+  services           Service[]
+  stylists           Stylist[]
+  appointments       Appointment[]
+  // Audit
+  auditLogs          AuditLog[]
+  // API
+  apiTokens          ApiToken[]
+
+  @@index([industryId])
+  @@index([subscriptionStatus])
+}
+
+// ============================================
+// USERS - All user accounts
+// ============================================
+model User {
+  id              String    @id @default(cuid())
+  email           String
+  password        String?   // null for OAuth-only users
+  firstName       String
+  lastName        String
+  role            String    @default("TRAINEE")  // SUPER_ADMIN, COMPANY_ADMIN, MANAGER, SUPERVISOR, TRAINEE
+  avatar          String?
+  phone           String?
+  isActive        Boolean   @default(true)
+  emailVerified   Boolean   @default(false)
+  lastLoginAt     DateTime?
+
+  // OAuth
+  googleId        String?   @unique
+  microsoftId     String?   @unique
+
+  // Company relation (null for SUPER_ADMIN)
+  companyId       String?
+  company         Company?  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  sessions        SalesSession[]
+  auditLogs       AuditLog[]
+  passwordResets  PasswordReset[]
+
+  @@unique([email, companyId])
+  @@index([companyId])
+  @@index([role])
+  @@index([email])
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
+}
+
+// API Tokens for external integrations
+model ApiToken {
+  id          String    @id @default(cuid())
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name        String    // Descriptive name for the token
+  tokenHash   String    @unique  // Hashed token (never store plain text)
+  prefix      String    // First 8 chars for identification (e.g., "apex_sk_")
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+  permissions Json      @default("[]")  // Array of permitted scopes
+  createdBy   String?   // User who created the token
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tokenHash])
+  @@index([companyId])
+  @@index([prefix])
+}
+
+// ============================================
+// COMPANY BRANDING & SETTINGS
+// ============================================
+model CompanyBranding {
+  id              String    @id @default(cuid())
+  companyId       String    @unique
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  logoUrl         String    @default("")
+  faviconUrl      String    @default("")
+  primaryColor    String    @default("#2563eb")
+  secondaryColor  String    @default("#1d4ed8")
+  accentColor     String    @default("#3b82f6")
+  headingFont     String    @default("Inter")
+  bodyFont        String    @default("Inter")
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model CompanyStoreInfo {
+  id              String    @id @default(cuid())
+  companyId       String    @unique
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  businessName    String    @default("")
+  tagline         String    @default("")
+  description     String    @default("")
+  address         String    @default("")
+  phone           String    @default("")
+  email           String    @default("")
+  website         String    @default("")
+  businessHours   String    @default("")
+  timezone        String    @default("America/New_York")
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model CompanyFeatures {
+  id                    String    @id @default(cuid())
+  companyId             String    @unique
+  company               Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // FAQ
+  faqEnabled            Boolean   @default(false)
+
+  // Sticky Bar
+  stickyBarEnabled      Boolean   @default(false)
+  stickyBarText         String    @default("")
+  stickyBarBgColor      String    @default("#2563eb")
+  stickyBarLink         String    @default("")
+  stickyBarLinkText     String    @default("")
+
+  // Live Chat
+  liveChatEnabled       Boolean   @default(false)
+  chatProvider          String    @default("builtin")  // builtin, intercom, zendesk, crisp, tawk, drift
+  chatWidgetId          String    @default("")
+
+  // Notifications
+  emailNotifications    Boolean   @default(true)
+  smsNotifications      Boolean   @default(false)
+  pushNotifications     Boolean   @default(false)
+  orderConfirmations    Boolean   @default(true)
+  marketingEmails       Boolean   @default(false)
+  appointmentReminders  Boolean   @default(true)
+
+  // Social Media
+  facebookUrl           String    @default("")
+  twitterUrl            String    @default("")
+  instagramUrl          String    @default("")
+  linkedinUrl           String    @default("")
+  youtubeUrl            String    @default("")
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model CompanyPaymentSettings {
+  id                    String    @id @default(cuid())
+  companyId             String    @unique
+  company               Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  enabled               Boolean   @default(false)
+
+  // Stripe
+  stripeEnabled         Boolean   @default(false)
+  stripePublishableKey  String    @default("")
+  stripeSecretKey       String    @default("")
+  stripeWebhookSecret   String    @default("")
+  stripeAchEnabled      Boolean   @default(false)
+  stripeTestMode        Boolean   @default(true)
+
+  // PayPal
+  paypalEnabled         Boolean   @default(false)
+  paypalClientId        String    @default("")
+  paypalClientSecret    String    @default("")
+  paypalTestMode        Boolean   @default(true)
+
+  // Square
+  squareEnabled         Boolean   @default(false)
+  squareApplicationId   String    @default("")
+  squareAccessToken     String    @default("")
+  squareLocationId      String    @default("")
+  squareTestMode        Boolean   @default(true)
+
+  // Authorize.net
+  authorizeEnabled      Boolean   @default(false)
+  authorizeApiLoginId   String    @default("")
+  authorizeTransactionKey String  @default("")
+  authorizeTestMode     Boolean   @default(true)
+
+  // Braintree
+  braintreeEnabled      Boolean   @default(false)
+  braintreeMerchantId   String    @default("")
+  braintreePublicKey    String    @default("")
+  braintreePrivateKey   String    @default("")
+  braintreeTestMode     Boolean   @default(true)
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+// ============================================
+// PRODUCTS - Generic product model (all industries)
+// ============================================
+model Product {
+  id              String    @id @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  name            String
+  sku             String?
+  category        String    @default("general")
+  description     String?   @db.Text
+  tagline         String?
+
+  // Pricing
+  basePrice       Float     @default(0)
+  salePrice       Float?
+  priceNote       String?
+
+  // Details (JSON for flexibility)
+  features        Json      @default("[]")   // JSON array
+  benefits        Json      @default("[]")   // JSON array
+  idealFor        Json      @default("[]")   // JSON array
+  variants        Json      @default("[]")   // JSON array
+  images          Json      @default("[]")   // JSON array
+  specifications  Json      @default("{}")   // JSON object
+
+  // Inventory
+  stockQuantity   Int       @default(0)
+  stockStatus     String    @default("in_stock")  // in_stock, low_stock, out_of_stock
+
+  // Status
+  featured        Boolean   @default(false)
+  isActive        Boolean   @default(true)
+  sortOrder       Int       @default(0)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  sessions        SalesSession[]
+
+  @@index([companyId])
+  @@index([category])
+  @@index([sku])
+}
+
+// ============================================
+// VEHICLES - Auto industry specific
+// ============================================
+model Vehicle {
+  id              String    @id @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  vin             String?   @unique
+  stockNumber     String?
+  year            Int
+  make            String
+  model           String
+  trim            String    @default("")
+  bodyStyle       String    @default("sedan")
+  exteriorColor   String
+  interiorColor   String    @default("Black")
+  mileage         Int       @default(0)
+  condition       String    @default("new")  // new, used, certified
+
+  msrp            Float     @default(0)
+  salePrice       Float
+  specialPrice    Float?
+
+  engine          String    @default("")
+  transmission    String    @default("automatic")
+  drivetrain      String    @default("fwd")
+  fuelType        String    @default("gasoline")
+  mpgCity         Int?
+  mpgHighway      Int?
+
+  features        Json      @default("[]")
+  description     String    @default("")  @db.Text
+  images          Json      @default("[]")
+
+  status          String    @default("available")  // available, sold, pending, reserved
+  featured        Boolean   @default(false)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([make, model])
+  @@index([status])
+}
+
+// ============================================
+// SALON SERVICES & STYLISTS
+// ============================================
+model Service {
+  id              String    @id @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  name            String
+  description     String?   @db.Text
+  category        String    @default("general")
+  price           Float     @default(0)
+  priceVaries     Boolean   @default(false)
+  priceNote       String?
+  duration        Int       @default(30)  // minutes
+  isActive        Boolean   @default(true)
+  sortOrder       Int       @default(0)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  appointments    Appointment[]
+
+  @@index([companyId])
+  @@index([category])
+}
+
+model Stylist {
+  id              String    @id @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  name            String
+  phone           String?
+  email           String?
+  bio             String?   @db.Text
+  specialties     Json      @default("[]")
+  imageUrl        String?
+  isActive        Boolean   @default(true)
+  acceptingNew    Boolean   @default(true)
+  workingHours    Json      @default("{}")
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  appointments    Appointment[]
+
+  @@index([companyId])
+}
+
+model Appointment {
+  id               String    @id @default(cuid())
+  companyId        String
+  company          Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  serviceId        String
+  service          Service   @relation(fields: [serviceId], references: [id])
+  stylistId        String?
+  stylist          Stylist?  @relation(fields: [stylistId], references: [id])
+
+  customerName     String
+  customerPhone    String
+  customerEmail    String?
+  appointmentDate  DateTime
+  duration         Int
+  status           String    @default("confirmed")  // pending, confirmed, completed, cancelled, no_show
+  notes            String?   @db.Text
+  confirmationCode String    @unique
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([appointmentDate])
+  @@index([status])
+}
+
+// ============================================
+// SALES TRAINING CONTENT
+// ============================================
+model SalesTechnique {
+  id              String    @id @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  name            String
+  category        String    // discovery, positioning, persuasion, closing, objection_handling
+  description     String    @db.Text
+  script          String    @db.Text
+  tips            Json      @default("[]")
+  examples        Json      @default("[]")
+  effectiveness   String    @default("medium")  // low, medium, high
+  bestFor         Json      @default("[]")
+  isActive        Boolean   @default(true)
+  successRate     Float     @default(0)
+  usageCount      Int       @default(0)
+  sortOrder       Int       @default(0)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([category])
+}
+
+model DiscoveryQuestion {
+  id              String    @id @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  question        String
+  phase           String    @default("discovery")  // opening, discovery, needs_analysis, presentation, closing
+  purpose         String    @db.Text
+  followUp        String?   @db.Text
+  targetNeed      String
+  scoringWeight   Int       @default(1)
+  isActive        Boolean   @default(true)
+  sortOrder       Int       @default(0)
+
+  createdAt       DateTime  @default(now())
+
+  @@index([companyId])
+  @@index([phase])
+}
+
+model ClosingStrategy {
+  id              String    @id @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  name            String
+  type            String    // assumptive, soft, urgency, choice, summary, direct
+  script          String    @db.Text
+  useWhen         String    @db.Text
+  tips            Json      @default("[]")
+  isActive        Boolean   @default(true)
+  successRate     Float     @default(0)
+  sortOrder       Int       @default(0)
+
+  createdAt       DateTime  @default(now())
+
+  @@index([companyId])
+  @@index([type])
+}
+
+model ObjectionHandler {
+  id              String    @id @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  objection       String
+  category        String    // price, need, timing, trust, competition, authority, priority
+  frequency       String    @default("common")  // rare, occasional, common, very_common
+  response        String    @db.Text
+  technique       String
+  followUp        String?   @db.Text
+  isActive        Boolean   @default(true)
+  sortOrder       Int       @default(0)
+
+  createdAt       DateTime  @default(now())
+
+  @@index([companyId])
+  @@index([category])
+}
+
+// ============================================
+// AI CONFIGURATION
+// ============================================
+model AIConfig {
+  id              String    @id @default(cuid())
+  companyId       String    @unique
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Model settings
+  model           String    @default("gpt-4")
+  temperature     Float     @default(0.7)
+  maxTokens       Int       @default(1000)
+  topP            Float     @default(1)
+
+  // Personality
+  systemPrompt    String    @db.Text
+  greeting        String    @db.Text
+  voiceId         String    @default("alloy")
+  language        String    @default("en")
+
+  // Behavior
+  responseStyle   String    @default("professional")  // professional, friendly, casual
+  verbosity       String    @default("balanced")      // concise, balanced, detailed
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model AIAgent {
+  id              String    @id @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  name            String
+  description     String?   @db.Text
+  type            String    @default("sales")  // sales, support, demo, training
+  persona         String    @db.Text
+  instructions    String    @db.Text
+  isActive        Boolean   @default(true)
+  isDefault       Boolean   @default(false)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([companyId])
+}
+
+model AITool {
+  id              String    @id @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  name            String
+  description     String    @db.Text
+  functionName    String
+  parameters      Json      @default("{}")
+  isActive        Boolean   @default(true)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([companyId])
+}
+
+model KnowledgeArticle {
+  id              String    @id @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  title           String
+  content         String    @db.Text
+  category        String    @default("general")
+  tags            Json      @default("[]")
+  isActive        Boolean   @default(true)
+  sortOrder       Int       @default(0)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([category])
+}
+
+// ============================================
+// SALES SESSIONS & ANALYTICS
+// ============================================
+model SalesSession {
+  id              String    @id @default(cuid())
+  sessionId       String    @unique @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  productId       String?
+  product         Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  userName        String?
+  scenario        String    @default("General Training")  // e.g., "Cold Call", "Walk-in Customer", "Follow-up Call"
+  mode            String    @default("text")  // text, voice
+  startedAt       DateTime  @default(now())
+  endedAt         DateTime?
+  outcome         String    @default("in_progress")  // in_progress, completed, abandoned, sale_made, no_sale
+  saleConfirmed   Boolean   @default(false)
+  currentPhase    String    @default("greeting")  // greeting, discovery, presentation, objection, closing
+  userNeeds       Json      @default("{}")
+  techniquesUsed  Json      @default("[]")
+  closingAttempts Int       @default(0)
+  score           Float?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  messages        SessionMessage[]
+  analytics       SessionAnalytics?
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([productId])
+  @@index([outcome])
+  @@index([startedAt])
+}
+
+model SessionMessage {
+  id              String        @id @default(cuid())
+  sessionId       String
+  session         SalesSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role            String        // user, assistant, system
+  content         String        @db.Text
+  phase           String?
+  sentiment       String?       // positive, neutral, negative
+  keywords        Json          @default("[]")
+  tokenCount      Int           @default(0)
+  createdAt       DateTime      @default(now())
+
+  @@index([sessionId])
+}
+
+model SessionAnalytics {
+  id                      String        @id @default(cuid())
+  sessionId               String        @unique
+  session                 SalesSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  totalMessages           Int           @default(0)
+  userMessageCount        Int           @default(0)
+  aiMessageCount          Int           @default(0)
+  avgResponseLength       Float         @default(0)
+  discoveryQuestionsAsked Int           @default(0)
+  objectionCount          Int           @default(0)
+  positiveSignals         Int           @default(0)
+  negativeSignals         Int           @default(0)
+  timeToFirstInterest     Int?          // seconds
+  timeToClose             Int?          // seconds
+  sessionDuration         Int?          // seconds
+  successfulTechniques    Json          @default("[]")
+  failedTechniques        Json          @default("[]")
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+}
+
+// ============================================
+// AUDIT LOGGING
+// ============================================
+model AuditLog {
+  id              String    @id @default(cuid())
+  companyId       String?
+  company         Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  action          String    // CREATE, READ, UPDATE, DELETE, LOGIN, LOGOUT, etc.
+  entityType      String    // User, Company, Product, SalesSession, etc.
+  entityId        String?
+
+  previousValue   Json?     // Previous state (for updates)
+  newValue        Json?     // New state (for creates/updates)
+
+  ipAddress       String?
+  userAgent       String?
+  requestPath     String?
+  requestMethod   String?
+
+  status          String    @default("success")  // success, failure, error
+  errorMessage    String?
+
+  createdAt       DateTime  @default(now())
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([createdAt])
+}
+
+model SecurityLog {
+  id              String    @id @default(cuid())
+
+  eventType       String    // LOGIN_SUCCESS, LOGIN_FAILED, PASSWORD_RESET, PERMISSION_DENIED, etc.
+
+  userId          String?
+  email           String?
+  ipAddress       String
+  userAgent       String?
+
+  details         Json?
+  riskLevel       String    @default("low")  // low, medium, high, critical
+
+  resolved        Boolean   @default(false)
+  resolvedAt      DateTime?
+  resolvedBy      String?
+
+  createdAt       DateTime  @default(now())
+
+  @@index([eventType])
+  @@index([userId])
+  @@index([ipAddress])
+  @@index([riskLevel])
+  @@index([createdAt])
+}
+
+// ============================================
+// DEMO MODE
+// ============================================
+model DemoSession {
+  id              String    @id @default(cuid())
+  email           String?
+  phone           String?
+  verificationCode String?
+  verified        Boolean   @default(false)
+  messageCount    Int       @default(0)
+  maxMessages     Int       @default(10)
+  ipAddress       String
+  userAgent       String?
+  expiresAt       DateTime
+  createdAt       DateTime  @default(now())
+
+  @@index([email])
+  @@index([ipAddress])
+}
+
+// ============================================
+// LANGUAGES - For voice/translation support
+// ============================================
+model Language {
+  id         String   @id @default(cuid())
+  code       String   @unique
+  name       String
+  nativeName String
+  enabled    Boolean  @default(true)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([enabled])
+}
+
+// ============================================
+// APP CONFIG - Per-company application settings
+// ============================================
+model AppConfig {
+  id                  String   @id @default(cuid())
+  companyId           String   @unique
+  appName             String   @default("AI Sales Training")
+  greeting            String   @db.Text
+  triggerPhrase       String   @default("")
+  selectedVoice       String   @default("alloy")
+  aiPersona           String   @default("confident, friendly sales professional")
+  successKeywords     Json     @default("[]")
+  objectionKeywords   Json     @default("[]")
+  maxClosingAttempts  Int      @default(3)
+  salesMode           String   @default("ai_sells")  // ai_sells, user_sells
+  difficulty          String   @default("medium")    // easy, medium, hard, expert
+  primaryLanguage     String   @default("en")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+// ============================================
+// POSITIONING ANGLES - How to frame the product
+// ============================================
+model PositioningAngle {
+  id            String   @id @default(cuid())
+  companyId     String
+  userNeed      String   // professionalism, reliability, creativity, organization, status, gift
+  headline      String
+  pitch         String   @db.Text
+  emotionalHook String   @db.Text
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([companyId, userNeed])
+  @@index([companyId])
+}
+
+// ============================================
+// AI PROMPT CONFIG - Configurable AI prompts
+// ============================================
+model AIPromptConfig {
+  id                String   @id @default(cuid())
+  companyId         String
+  name              String   @default("default")
+  systemPrompt      String   @db.Text
+  discoveryPrompt   String   @db.Text
+  positioningPrompt String   @db.Text
+  closingPrompt     String   @db.Text
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([companyId, name])
+  @@index([companyId])
+}
+
+// ============================================
+// GLOBAL ANALYTICS - Aggregate learning data
+// ============================================
+model GlobalAnalytics {
+  id                     String   @id @default(cuid())
+  companyId              String
+  date                   DateTime @default(now())
+  totalSessions          Int      @default(0)
+  successfulSales        Int      @default(0)
+  failedSales            Int      @default(0)
+  abandonedSessions      Int      @default(0)
+  avgSessionDuration     Float    @default(0)
+  avgMessagesToClose     Float    @default(0)
+  conversionRate         Float    @default(0)
+  topPerformingTechnique String?
+  mostCommonObjection    String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@unique([companyId, date])
+  @@index([companyId])
+  @@index([date])
+}
+
+// ============================================
+// LEARNING INSIGHTS - AI-generated insights
+// ============================================
+model LearningInsight {
+  id          String   @id @default(cuid())
+  companyId   String
+  type        String   // technique_effectiveness, objection_pattern, conversion_insight
+  insight     String   @db.Text
+  confidence  Float    @default(0)
+  basedOn     Int      @default(0)  // Number of sessions this is based on
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([companyId])
+  @@index([type])
+}
+
+// ============================================
+// WEBHOOKS - External integrations
+// ============================================
+model Webhook {
+  id            String    @id @default(cuid())
+  companyId     String
+  name          String
+  url           String
+  events        Json      @default("[]")  // Array of event names
+  secret        String?   // HMAC secret for signing
+  headers       Json      @default("{}")  // Custom headers
+  isActive      Boolean   @default(true)
+  lastTriggered DateTime?
+  failCount     Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deliveries    WebhookDelivery[]
+
+  @@index([companyId])
+}
+
+model WebhookDelivery {
+  id            String    @id @default(cuid())
+  webhookId     String
+  webhook       Webhook   @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  eventType     String
+  payload       Json
+  statusCode    Int?
+  response      String?   @db.Text
+  error         String?   @db.Text
+  attempts      Int       @default(1)
+  deliveredAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([webhookId])
+  @@index([eventType])
+  @@index([createdAt])
+}
+
+// ============================================
+// SMS SETTINGS - Telephony configuration
+// ============================================
+model SmsSettings {
+  id                String   @id @default(cuid())
+  companyId         String   @unique
+  provider          String   @default("twilio")  // twilio, vonage, messagebird
+  fromNumber        String?
+  accountSid        String?
+  authToken         String?
+  welcomeTemplate   String?  @db.Text
+  completeTemplate  String?  @db.Text
+  followupTemplate  String?  @db.Text
+  autoWelcome       Boolean  @default(false)
+  autoComplete      Boolean  @default(false)
+  autoFollowup      Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+// ============================================
+// CALL TRANSFER SETTINGS
+// ============================================
+model CallTransferSettings {
+  id              String   @id @default(cuid())
+  companyId       String   @unique
+  mode            String   @default("blind")  // blind, warm, queue
+  holdMusic       String   @default("default")
+  timeout         Int      @default(30)
+  fallbackAction  String   @default("voicemail")
+  triggerSale     Boolean  @default(false)
+  triggerEscalate Boolean  @default(true)
+  triggerComplex  Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  destinations    TransferDestination[]
+
+  @@index([companyId])
+}
+
+model TransferDestination {
+  id                     String               @id @default(cuid())
+  callTransferSettingsId String
+  callTransferSettings   CallTransferSettings @relation(fields: [callTransferSettingsId], references: [id], onDelete: Cascade)
+  name                   String
+  number                 String
+  priority               Int                  @default(1)
+  isActive               Boolean              @default(true)
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+
+  @@index([callTransferSettingsId])
+}
+
+// ============================================
+// DTMF MENU SETTINGS
+// ============================================
+model DtmfSettings {
+  id              String   @id @default(cuid())
+  companyId       String   @unique
+  welcomeMessage  String?  @db.Text
+  inputTimeout    Int      @default(5)
+  invalidMessage  String   @default("Invalid selection. Please try again.")
+  maxRetries      Int      @default(3)
+  menuItems       Json     @default("{}")  // key -> action mappings
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+// ============================================
+// CUSTOM TOOLS - User-defined tool definitions
+// ============================================
+model CustomTool {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  type        String   // api, webhook, function, database
+  description String?  @db.Text
+  endpoint    String?
+  method      String   @default("POST")
+  headers     Json     @default("{}")
+  schema      Json     @default("{}")  // JSON schema for parameters
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+// ============================================
+// LOGIC RULES - Conditional flow rules
+// ============================================
+model LogicRule {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  priority    Int      @default(10)
+  trigger     String   // message_received, session_start, session_end, objection_detected, etc.
+  condition   String   @db.Text  // JavaScript expression
+  action      String   // send_message, transfer_call, update_field, trigger_webhook, etc.
+  params      Json     @default("{}")  // Action parameters
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([trigger])
+}
+
+// ============================================
+// CUSTOM FUNCTIONS - User-defined functions
+// ============================================
+model CustomFunction {
+  id          String    @id @default(cuid())
+  companyId   String
+  name        String
+  description String?   @db.Text
+  params      Json      @default("[]")  // Array of parameter definitions
+  body        String    @db.Text        // JavaScript function body
+  isActive    Boolean   @default(true)
+  lastRun     DateTime?
+  runCount    Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([companyId])
+}
+
+// ============================================
+// TRANSACTIONS - Payment records
+// ============================================
+model Transaction {
+  id            String   @id @default(cuid())
+  companyId     String
+  externalId    String?  // Stripe/PayPal transaction ID
+  sessionId     String?  // Related sales session
+  customerEmail String?
+  customerName  String?
+  amount        Int      // In cents
+  currency      String   @default("USD")
+  status        String   @default("pending")  // pending, succeeded, failed, refunded
+  type          String   @default("payment")  // payment, refund, subscription
+  metadata      Json     @default("{}")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([externalId])
+  @@index([status])
+}
+
+// ============================================
+// SUBSCRIPTIONS - Platform subscription tracking
+// ============================================
+model Subscription {
+  id                   String    @id @default(cuid())
+  companyId            String    @unique
+  stripeSubscriptionId String?   @unique
+  stripeCustomerId     String?
+  tier                 String    @default("starter")  // starter, professional, business, enterprise
+  status               String    @default("trialing") // trialing, active, past_due, canceled, unpaid
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  trialEndsAt          DateTime?
+  metadata             Json      @default("{}")
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([status])
+}
+
+// ============================================
+// TRAINING SCENARIOS - Preset training situations
+// ============================================
+model TrainingScenario {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  description     String   @db.Text
+  difficulty      String   @default("medium")  // easy, medium, hard, expert
+  customerProfile Json     @default("{}")      // Customer persona details
+  objectives      Json     @default("[]")      // Learning objectives
+  successCriteria Json     @default("[]")      // What constitutes success
+  hints           Json     @default("[]")      // Optional hints for trainee
+  isActive        Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([difficulty])
+}
+
+// ============================================
+// PLATFORM-WIDE SETTINGS
+// ============================================
+model SiteInfo {
+  id            String   @id @default("default")
+  siteName      String   @default("Apex Sales Training AI")
+  tagline       String   @default("")
+  description   String   @default("")  @db.Text
+  supportEmail  String   @default("")
+  supportPhone  String   @default("")
+  websiteUrl    String   @default("")
+  timezone      String   @default("America/New_York")
+  address       String   @default("")  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model EmailSettings {
+  id                    String   @id @default("default")
+  smtpHost              String   @default("")
+  smtpPort              Int      @default(587)
+  smtpEncryption        String   @default("tls")
+  smtpUsername          String   @default("")
+  smtpPassword          String   @default("")
+  fromEmail             String   @default("")
+  fromName              String   @default("")
+  welcomeEmailEnabled   Boolean  @default(true)
+  passwordResetEnabled  Boolean  @default(true)
+  sessionSummaryEnabled Boolean  @default(false)
+  weeklyReportEnabled   Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model SecuritySettings {
+  id                String   @id @default("default")
+  twoFactorEnabled  Boolean  @default(false)
+  oauthEnabled      Boolean  @default(true)
+  sessionTimeout    Int      @default(30)
+  maxLoginAttempts  Int      @default(5)
+  minPasswordLength Int      @default(8)
+  passwordExpiryDays Int     @default(0)
+  requireUppercase  Boolean  @default(true)
+  requireNumber     Boolean  @default(true)
+  requireSpecialChar Boolean @default(false)
+  ipWhitelistEnabled Boolean @default(false)
+  allowedIps        String   @default("")  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model NotificationSettings {
+  id                    String   @id @default("default")
+  emailNotifications    Boolean  @default(true)
+  smsNotifications      Boolean  @default(false)
+  pushNotifications     Boolean  @default(false)
+  notifyNewUser         Boolean  @default(true)
+  notifyNewCompany      Boolean  @default(true)
+  notifyPayment         Boolean  @default(true)
+  notifyError           Boolean  @default(false)
+  notifySessionComplete Boolean  @default(false)
+  notifyAchievement     Boolean  @default(true)
+  notifyWeeklyReport    Boolean  @default(false)
+  notifyReminder        Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model IndustryBranding {
+  id             String   @id @default(cuid())
+  industryId     String   @unique
+  industry       Industry @relation(fields: [industryId], references: [id], onDelete: Cascade)
+  logoUrl        String   @default("")
+  faviconUrl     String   @default("")
+  primaryColor   String   @default("#2563eb")
+  secondaryColor String   @default("#1d4ed8")
+  accentColor    String   @default("#3b82f6")
+  headingFont    String   @default("Inter")
+  bodyFont       String   @default("Inter")
+  customCss      String   @default("")  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ============================================
+// ANNOUNCEMENTS - Per-industry announcement bars
+// ============================================
+model Announcement {
+  id              String    @id @default(cuid())
+  industryId      String?
+  industry        Industry? @relation(fields: [industryId], references: [id], onDelete: Cascade)
+  text            String    @db.Text
+  icon            String    @default("bi-megaphone")
+  bgColor         String    @default("#2563eb")
+  textColor       String    @default("#ffffff")
+  linkUrl         String    @default("")
+  linkText        String    @default("")
+  position        String    @default("top")  // top, bottom
+  startDate       DateTime?
+  endDate         DateTime?
+  isActive        Boolean   @default(true)
+  sortOrder       Int       @default(0)
+  allowDismiss    Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([industryId])
+  @@index([isActive])
+}
+
+// ============================================
+// BANNERS - Per-industry homepage banners
+// ============================================
+model Banner {
+  id              String    @id @default(cuid())
+  industryId      String?
+  industry        Industry? @relation(fields: [industryId], references: [id], onDelete: Cascade)
+  title           String    @default("")
+  subtitle        String    @default("")
+  desktopImageUrl String    @default("")
+  mobileImageUrl  String    @default("")
+  linkUrl         String    @default("")
+  buttonText      String    @default("")
+  textPosition    String    @default("center")  // left, center, right
+  textColor       String    @default("#ffffff")
+  overlayColor    String    @default("rgba(0,0,0,0.3)")
+  startDate       DateTime?
+  endDate         DateTime?
+  isActive        Boolean   @default(true)
+  sortOrder       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([industryId])
+  @@index([isActive])
+}
+
+// ============================================
+// PLATFORM FEATURES - Platform-wide feature toggles
+// ============================================
+model PlatformFeatures {
+  id                  String   @id @default("default")
+
+  // Training Features
+  voiceTraining       Boolean  @default(true)
+  realTimeCoaching    Boolean  @default(true)
+  rolePlay            Boolean  @default(true)
+  leaderboard         Boolean  @default(false)
+
+  // Communication Features
+  smsNotifications    Boolean  @default(false)
+  emailNotifications  Boolean  @default(true)
+  webhooks            Boolean  @default(false)
+  pushNotifications   Boolean  @default(false)
+
+  // Payment Configuration
+  paymentsEnabled     Boolean  @default(false)
+  stripeEnabled       Boolean  @default(false)
+  stripePublishableKey String  @default("")
+  stripeSecretKey     String   @default("")
+  stripeTestMode      Boolean  @default(true)
+  paypalEnabled       Boolean  @default(false)
+  paypalClientId      String   @default("")
+  paypalSecretKey     String   @default("")
+  paypalTestMode      Boolean  @default(true)
+  squareEnabled       Boolean  @default(false)
+  squareAppId         String   @default("")
+  squareAccessToken   String   @default("")
+  squareTestMode      Boolean  @default(true)
+
+  // Live Chat
+  liveChatEnabled     Boolean  @default(false)
+  chatProvider        String   @default("builtin")  // builtin, intercom, zendesk, crisp, tawk, drift
+  chatWidgetId        String   @default("")
+  chatApiKey          String   @default("")
+
+  // Social Media
+  facebookUrl         String   @default("")
+  twitterUrl          String   @default("")
+  linkedinUrl         String   @default("")
+  instagramUrl        String   @default("")
+  youtubeUrl          String   @default("")
+
+  // FAQ & Sticky Bar
+  faqEnabled          Boolean  @default(false)
+  stickyBarEnabled    Boolean  @default(false)
+  stickyBarText       String   @default("")
+  stickyBarBgColor    String   @default("#2563eb")
+  stickyBarLink       String   @default("")
+  stickyBarLinkText   String   @default("")
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+// ============================================
+// TRIAL CODES - Demo access codes
+// ============================================
+model TrialCode {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  description     String?
+  maxUses         Int       @default(1)
+  usedCount       Int       @default(0)
+  expiresAt       DateTime?
+  daysValid       Int       @default(14)    // Trial period length in days
+  industryId      String?                   // Limit to specific industry
+  createdBy       String?                   // User ID who created it
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([code])
+  @@index([isActive])
+}

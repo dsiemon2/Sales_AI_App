@@ -1,0 +1,208 @@
+<%- include('../../layouts/admin', { body: `
+
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-robot me-2"></i>AI Configuration</h1>
+      <p class="text-muted mb-0">Configure AI behavior and settings</p>
+    </div>
+  </div>
+
+  <!-- AI Config Tabs -->
+  <ul class="nav nav-tabs mb-4" role="tablist">
+    <li class="nav-item">
+      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#modelTab">
+        <i class="bi bi-cpu me-1"></i> Model Settings
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#greetingTab">
+        <i class="bi bi-chat-quote me-1"></i> Greeting
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#promptsTab">
+        <i class="bi bi-file-text me-1"></i> Prompts
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <!-- Model Settings Tab -->
+    <div class="tab-pane fade show active" id="modelTab">
+      <div class="card">
+        <div class="card-body">
+          <form id="aiConfigForm">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">AI Provider</label>
+                <select name="provider" class="form-select">
+                  <option value="openai">OpenAI</option>
+                  <option value="anthropic">Anthropic</option>
+                  <option value="google">Google AI</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Model</label>
+                <select name="model" class="form-select">
+                  <option value="gpt-4">GPT-4</option>
+                  <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                  <option value="claude-3-opus">Claude 3 Opus</option>
+                  <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Temperature</label>
+                <input type="range" name="temperature" class="form-range" min="0" max="2" step="0.1" value="0.7" oninput="this.nextElementSibling.value = this.value">
+                <output>0.7</output>
+                <small class="text-muted d-block">Lower = more focused, Higher = more creative</small>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Max Tokens</label>
+                <input type="number" name="maxTokens" class="form-control" value="2048" min="100" max="8000">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Top P</label>
+                <input type="range" name="topP" class="form-range" min="0" max="1" step="0.1" value="1.0" oninput="this.nextElementSibling.value = this.value">
+                <output>1.0</output>
+              </div>
+              <div class="col-12">
+                <label class="form-label">System Prompt</label>
+                <textarea name="systemPrompt" class="form-control" rows="6" placeholder="Enter the base system prompt for AI interactions..."></textarea>
+              </div>
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-lg me-1"></i> Save Model Settings
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Greeting Tab -->
+    <div class="tab-pane fade" id="greetingTab">
+      <div class="card">
+        <div class="card-body">
+          <form id="greetingForm">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Welcome Message</label>
+                <textarea name="welcomeMessage" class="form-control" rows="3" placeholder="The first message shown to users..."></textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label">System Instructions</label>
+                <textarea name="systemInstructions" class="form-control" rows="4" placeholder="Instructions for the AI persona..."></textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Persona</label>
+                <input type="text" name="persona" class="form-control" placeholder="e.g., Experienced Sales Coach">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Tone</label>
+                <select name="tone" class="form-select">
+                  <option value="professional">Professional</option>
+                  <option value="friendly">Friendly</option>
+                  <option value="casual">Casual</option>
+                  <option value="formal">Formal</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-lg me-1"></i> Save Greeting
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prompts Tab -->
+    <div class="tab-pane fade" id="promptsTab">
+      <div class="card">
+        <div class="card-body">
+          <form id="promptsForm">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Base System Prompt</label>
+                <textarea name="baseSystemPrompt" class="form-control" rows="4" placeholder="Base instructions for all AI interactions..."></textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Industry Context</label>
+                <textarea name="industryContext" class="form-control" rows="3" placeholder="Industry-specific context..."></textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Product Context</label>
+                <textarea name="productContext" class="form-control" rows="3" placeholder="Product-specific context..."></textarea>
+              </div>
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-lg me-1"></i> Save Prompts
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const basePath = '${basePath}';
+  const token = new URLSearchParams(window.location.search).get('token') || '';
+
+  document.getElementById('aiConfigForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+    try {
+      const res = await fetch(basePath + '/admin/ai-config/config?token=' + token, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) alert('AI config saved successfully');
+      else alert((await res.json()).error || 'Failed to save');
+    } catch (err) {
+      alert('Error saving AI config');
+    }
+  });
+
+  document.getElementById('greetingForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+    try {
+      const res = await fetch(basePath + '/admin/ai-config/greeting?token=' + token, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) alert('Greeting saved successfully');
+      else alert((await res.json()).error || 'Failed to save');
+    } catch (err) {
+      alert('Error saving greeting');
+    }
+  });
+
+  document.getElementById('promptsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+    try {
+      const res = await fetch(basePath + '/admin/ai-config/prompt-config?token=' + token, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) alert('Prompts saved successfully');
+      else alert((await res.json()).error || 'Failed to save');
+    } catch (err) {
+      alert('Error saving prompts');
+    }
+  });
+</script>
+
+` }) %>

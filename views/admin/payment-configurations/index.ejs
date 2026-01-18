@@ -1,0 +1,577 @@
+<%- include('../../layouts/admin', { body: `
+
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-credit-card me-2"></i>Payment Processing</h1>
+      <p class="text-muted mb-0">Configure your payment gateway providers</p>
+    </div>
+  </div>
+
+  <!-- Active Provider Banner -->
+  <div id="activeProviderBanner" class="alert d-none mb-4" style="background: linear-gradient(135deg, #635BFF 0%, #7c3aed 100%); color: white; border: none;">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase;">Active Payment Provider</div>
+        <div id="activeProviderName" style="font-size: 20px; font-weight: bold;">-</div>
+        <div id="activeProviderMode" style="font-size: 14px; opacity: 0.9;">-</div>
+      </div>
+      <i class="bi bi-check-circle-fill fs-1" style="opacity: 0.3;"></i>
+    </div>
+  </div>
+
+  <!-- No Provider Warning -->
+  <div id="noProviderWarning" class="alert alert-warning mb-4">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    <strong>No Payment Provider Active</strong> - Configure and enable a payment gateway below to accept payments.
+  </div>
+
+  <!-- How It Works -->
+  <div class="card mb-4" style="background: #f0f9ff; border: 1px solid #bae6fd;">
+    <div class="card-body py-3">
+      <div class="row text-center">
+        <div class="col-md-4 border-end">
+          <div class="fw-semibold text-primary mb-1"><i class="bi bi-key me-1"></i>Configure Keys</div>
+          <small class="text-muted">Enter your API keys for each provider. Keys are stored securely.</small>
+        </div>
+        <div class="col-md-4 border-end">
+          <div class="fw-semibold text-success mb-1"><i class="bi bi-toggle-on me-1"></i>Enable Provider</div>
+          <small class="text-muted"><strong>Only one provider can be active.</strong> Enabling one disables others.</small>
+        </div>
+        <div class="col-md-4">
+          <div class="fw-semibold text-purple mb-1"><i class="bi bi-flask me-1"></i>Test Mode</div>
+          <small class="text-muted">Toggle test mode to safely test payments without real transactions.</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Provider Cards Grid -->
+  <div class="row g-4 mb-4" id="providerCards">
+    <!-- Rendered by JavaScript -->
+  </div>
+
+  <!-- Comparison Table -->
+  <div class="card mb-4">
+    <div class="card-header"><i class="bi bi-list-check me-2"></i>Provider Comparison</div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Provider</th>
+            <th>Processing Fee</th>
+            <th>Credit Cards</th>
+            <th>ACH/eCheck</th>
+            <th>Apple Pay</th>
+            <th>Google Pay</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><i class="bi bi-stripe text-primary me-1"></i> Stripe</td>
+            <td>2.9% + 30c</td>
+            <td><i class="bi bi-check-circle-fill text-success"></i></td>
+            <td><i class="bi bi-check-circle-fill text-success"></i></td>
+            <td><i class="bi bi-check-circle-fill text-success"></i></td>
+            <td><i class="bi bi-check-circle-fill text-success"></i></td>
+          </tr>
+          <tr>
+            <td><i class="bi bi-wallet2 text-info me-1"></i> Braintree</td>
+            <td>2.59% + 49c</td>
+            <td><i class="bi bi-check-circle-fill text-success"></i></td>
+            <td><i class="bi bi-x-circle-fill text-danger"></i></td>
+            <td><i class="bi bi-check-circle-fill text-success"></i></td>
+            <td><i class="bi bi-check-circle-fill text-success"></i></td>
+          </tr>
+          <tr>
+            <td><i class="bi bi-square text-dark me-1"></i> Square</td>
+            <td>2.6% + 10c</td>
+            <td><i class="bi bi-check-circle-fill text-success"></i></td>
+            <td><i class="bi bi-x-circle-fill text-danger"></i></td>
+            <td><i class="bi bi-check-circle-fill text-success"></i></td>
+            <td><i class="bi bi-check-circle-fill text-success"></i></td>
+          </tr>
+          <tr>
+            <td><i class="bi bi-bank text-secondary me-1"></i> Authorize.net</td>
+            <td>2.9% + 30c</td>
+            <td><i class="bi bi-check-circle-fill text-success"></i></td>
+            <td><i class="bi bi-check-circle-fill text-success"></i></td>
+            <td><i class="bi bi-check-circle-fill text-success"></i></td>
+            <td><i class="bi bi-check-circle-fill text-success"></i></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Info Cards -->
+  <div class="row g-4">
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header"><i class="bi bi-link-45deg me-2"></i>Get API Keys</div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">
+            <a href="https://dashboard.stripe.com/apikeys" target="_blank" class="text-decoration-none">
+              <i class="bi bi-stripe text-primary me-2"></i>Stripe Dashboard - API Keys
+              <i class="bi bi-box-arrow-up-right ms-2 small"></i>
+            </a>
+          </li>
+          <li class="list-group-item">
+            <a href="https://www.braintreegateway.com/login" target="_blank" class="text-decoration-none">
+              <i class="bi bi-wallet2 text-info me-2"></i>Braintree Control Panel
+              <i class="bi bi-box-arrow-up-right ms-2 small"></i>
+            </a>
+          </li>
+          <li class="list-group-item">
+            <a href="https://squareup.com/dashboard/apps/my-applications" target="_blank" class="text-decoration-none">
+              <i class="bi bi-square text-dark me-2"></i>Square Developer Dashboard
+              <i class="bi bi-box-arrow-up-right ms-2 small"></i>
+            </a>
+          </li>
+          <li class="list-group-item">
+            <a href="https://developer.authorize.net/" target="_blank" class="text-decoration-none">
+              <i class="bi bi-bank text-secondary me-2"></i>Authorize.net Merchant Interface
+              <i class="bi bi-box-arrow-up-right ms-2 small"></i>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header"><i class="bi bi-info-circle me-2"></i>Important Notes</div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">
+            <i class="bi bi-shield-check text-success me-2"></i>
+            <strong>Secure Storage</strong> - API keys are encrypted in the database
+          </li>
+          <li class="list-group-item">
+            <i class="bi bi-flask text-warning me-2"></i>
+            <strong>Test Mode</strong> - Always test with sandbox keys before going live
+          </li>
+          <li class="list-group-item">
+            <i class="bi bi-arrow-left-right text-primary me-2"></i>
+            <strong>Single Provider</strong> - Only one payment provider can be active at a time
+          </li>
+          <li class="list-group-item">
+            <i class="bi bi-arrow-repeat text-info me-2"></i>
+            <strong>Webhooks</strong> - Configure webhooks in your provider dashboard
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const basePath = '${basePath}';
+const paymentSettings = ${JSON.stringify(paymentSettings || {})};
+
+const providers = {
+  stripe: {
+    name: 'Stripe',
+    icon: 'bi-stripe',
+    color: '#635BFF',
+    fee: '2.9% + 30c',
+    description: 'Most popular payment processor',
+    features: ['Credit Cards', 'ACH Transfers', 'Apple Pay', 'Google Pay'],
+    publicKeyLabel: 'Publishable Key',
+    secretKeyLabel: 'Secret Key',
+    publicKeyPlaceholder: 'pk_live_...',
+    secretKeyPlaceholder: 'sk_live_...',
+    hasAch: true
+  },
+  braintree: {
+    name: 'Braintree',
+    icon: 'bi-wallet2',
+    color: '#003087',
+    fee: '2.59% + 49c',
+    description: 'PayPal-owned processor',
+    features: ['Credit Cards', 'PayPal', 'Venmo', 'Apple Pay'],
+    publicKeyLabel: 'Public Key',
+    secretKeyLabel: 'Private Key',
+    publicKeyPlaceholder: 'Public key...',
+    secretKeyPlaceholder: 'Private key...',
+    hasMerchantId: true
+  },
+  square: {
+    name: 'Square',
+    icon: 'bi-square',
+    color: '#006AFF',
+    fee: '2.6% + 10c',
+    description: 'Best for retail & POS',
+    features: ['Credit Cards', 'Apple Pay', 'Google Pay', 'Afterpay'],
+    publicKeyLabel: 'Application ID',
+    secretKeyLabel: 'Access Token',
+    publicKeyPlaceholder: 'sandbox-sq0idb-...',
+    secretKeyPlaceholder: 'Access token...',
+    hasMerchantId: true,
+    merchantIdLabel: 'Location ID'
+  },
+  authorize: {
+    name: 'Authorize.net',
+    icon: 'bi-bank',
+    color: '#1C3D6E',
+    fee: '2.9% + 30c',
+    description: 'Enterprise gateway',
+    features: ['Credit Cards', 'ACH/eCheck', 'Apple Pay', 'Google Pay'],
+    publicKeyLabel: 'API Login ID',
+    secretKeyLabel: 'Transaction Key',
+    publicKeyPlaceholder: 'API Login ID...',
+    secretKeyPlaceholder: 'Transaction key...'
+  }
+};
+
+// Map payment settings to provider keys
+function getProviderData(providerCode) {
+  const s = paymentSettings || {};
+  switch(providerCode) {
+    case 'stripe':
+      return {
+        enabled: s.stripeEnabled,
+        publicKey: s.stripePublishableKey || '',
+        secretKey: s.stripeSecretKey || '',
+        testMode: s.stripeTestMode !== false,
+        webhookSecret: s.stripeWebhookSecret || '',
+        achEnabled: s.stripeAchEnabled || false
+      };
+    case 'braintree':
+      return {
+        enabled: s.braintreeEnabled,
+        publicKey: s.braintreePublicKey || '',
+        secretKey: s.braintreePrivateKey || '',
+        testMode: s.braintreeTestMode !== false,
+        merchantId: s.braintreeMerchantId || ''
+      };
+    case 'square':
+      return {
+        enabled: s.squareEnabled,
+        publicKey: s.squareApplicationId || '',
+        secretKey: s.squareAccessToken || '',
+        testMode: s.squareTestMode !== false,
+        merchantId: s.squareLocationId || ''
+      };
+    case 'authorize':
+      return {
+        enabled: s.authorizeEnabled,
+        publicKey: s.authorizeApiLoginId || '',
+        secretKey: s.authorizeTransactionKey || '',
+        testMode: s.authorizeTestMode !== false
+      };
+    default:
+      return {};
+  }
+}
+
+function renderProviders() {
+  const container = document.getElementById('providerCards');
+  let activeProvider = null;
+  let html = '';
+
+  Object.keys(providers).forEach(code => {
+    const p = providers[code];
+    const data = getProviderData(code);
+    const hasKeys = !!data.publicKey;
+
+    if (data.enabled) activeProvider = { code, name: p.name, testMode: data.testMode, achEnabled: data.achEnabled };
+
+    const featuresHtml = p.features.map(f => '<span class="badge bg-light text-dark me-1 mb-1">' + f + '</span>').join('');
+
+    html += '<div class="col-lg-6">' +
+      '<div class="card h-100 provider-card" data-provider="' + code + '" style="border: 2px solid ' + (data.enabled ? '#10b981' : '#e5e7eb') + ';">' +
+        // Enabled Badge
+        (data.enabled ? '<div style="position: absolute; top: 15px; left: 15px;"><span class="badge bg-success"><i class="bi bi-check me-1"></i>Active</span></div>' : '') +
+
+        // Header
+        '<div class="card-body text-center pb-0 border-bottom">' +
+          '<i class="' + p.icon + ' fs-1 mb-2 d-block" style="color: ' + p.color + ';"></i>' +
+          '<h5 class="mb-1">' + p.name + '</h5>' +
+          '<p class="text-muted small mb-2">' + p.description + '</p>' +
+          '<span class="badge mb-3" style="background: ' + p.color + '15; color: ' + p.color + ';">Fee: ' + p.fee + '</span>' +
+        '</div>' +
+
+        // Features
+        '<div class="card-body border-bottom">' +
+          '<label class="form-label small text-uppercase text-muted"><i class="bi bi-check-circle me-1"></i>Supported Methods</label>' +
+          '<div>' + featuresHtml + '</div>' +
+        '</div>' +
+
+        // API Keys
+        '<div class="card-body">' +
+          '<div class="mb-3">' +
+            '<label class="form-label"><i class="bi bi-eye me-1"></i>' + p.publicKeyLabel +
+              (hasKeys ? ' <span class="badge bg-success ms-1" style="font-size: 10px;">Configured</span>' : '') +
+            '</label>' +
+            '<input type="text" class="form-control public-key-input" value="' + (data.publicKey || '') + '" placeholder="' + p.publicKeyPlaceholder + '">' +
+          '</div>' +
+          '<div class="mb-3">' +
+            '<label class="form-label"><i class="bi bi-lock me-1"></i>' + p.secretKeyLabel +
+              (data.secretKey ? ' <span class="badge bg-success ms-1" style="font-size: 10px;">Set</span>' : '') +
+            '</label>' +
+            '<input type="password" class="form-control secret-key-input" placeholder="' + (data.secretKey ? '****************' : p.secretKeyPlaceholder) + '">' +
+          '</div>' +
+
+          // Merchant ID (for Braintree/Square)
+          (p.hasMerchantId ? '<div class="mb-3">' +
+            '<label class="form-label"><i class="bi bi-shop me-1"></i>' + (p.merchantIdLabel || 'Merchant ID') + '</label>' +
+            '<input type="text" class="form-control merchant-id-input" value="' + (data.merchantId || '') + '" placeholder="Enter merchant/location ID...">' +
+          '</div>' : '') +
+
+          // Advanced Settings
+          '<details class="mt-2">' +
+            '<summary class="text-muted small" style="cursor: pointer;"><i class="bi bi-gear me-1"></i>Advanced Settings</summary>' +
+            '<div class="mt-2">' +
+              '<div class="mb-2">' +
+                '<label class="form-label small"><i class="bi bi-shield me-1"></i>Webhook Secret</label>' +
+                '<input type="password" class="form-control form-control-sm webhook-secret-input" placeholder="' + (data.webhookSecret ? '****************' : 'Enter webhook secret...') + '">' +
+              '</div>' +
+              '<div class="d-flex gap-3 mt-2">' +
+                '<label class="d-flex align-items-center gap-2" style="cursor: pointer;">' +
+                  '<input type="checkbox" class="form-check-input test-mode-toggle" ' + (data.testMode ? 'checked' : '') + '>' +
+                  '<span class="small"><i class="bi bi-flask me-1"></i>Test Mode</span>' +
+                '</label>' +
+                (p.hasAch ? '<label class="d-flex align-items-center gap-2" style="cursor: pointer;">' +
+                  '<input type="checkbox" class="form-check-input ach-toggle" ' + (data.achEnabled ? 'checked' : '') + '>' +
+                  '<span class="small"><i class="bi bi-bank me-1"></i>ACH Transfers</span>' +
+                '</label>' : '') +
+              '</div>' +
+            '</div>' +
+          '</details>' +
+        '</div>' +
+
+        // Action Buttons
+        '<div class="card-footer bg-transparent d-flex gap-2">' +
+          '<button class="btn btn-primary btn-sm flex-grow-1 save-btn" data-provider="' + code + '">' +
+            '<i class="bi bi-save me-1"></i>Save' +
+          '</button>' +
+          '<button class="btn btn-outline-secondary btn-sm flex-grow-1 test-btn" data-provider="' + code + '" ' + (!hasKeys ? 'disabled' : '') + '>' +
+            '<i class="bi bi-plug me-1"></i>Test' +
+          '</button>' +
+          (data.enabled
+            ? '<button class="btn btn-danger btn-sm flex-grow-1 disable-btn" data-provider="' + code + '">' +
+                '<i class="bi bi-x-lg me-1"></i>Disable' +
+              '</button>'
+            : '<button class="btn btn-success btn-sm flex-grow-1 enable-btn" data-provider="' + code + '" ' + (!hasKeys ? 'disabled' : '') + '>' +
+                '<i class="bi bi-check-lg me-1"></i>Enable' +
+              '</button>'
+          ) +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  });
+
+  container.innerHTML = html;
+
+  // Update active provider banner
+  if (activeProvider) {
+    document.getElementById('noProviderWarning').classList.add('d-none');
+    document.getElementById('activeProviderBanner').classList.remove('d-none');
+    document.getElementById('activeProviderName').textContent = activeProvider.name;
+    document.getElementById('activeProviderMode').textContent =
+      (activeProvider.testMode ? 'Test Mode' : 'Live Mode') +
+      (activeProvider.achEnabled ? ' | ACH Enabled' : '');
+  } else {
+    document.getElementById('noProviderWarning').classList.remove('d-none');
+    document.getElementById('activeProviderBanner').classList.add('d-none');
+  }
+
+  // Attach event listeners
+  attachEventListeners();
+}
+
+function attachEventListeners() {
+  // Save buttons
+  document.querySelectorAll('.save-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const provider = this.dataset.provider;
+      const card = this.closest('.provider-card');
+
+      const publicKey = card.querySelector('.public-key-input').value.trim();
+      const secretKey = card.querySelector('.secret-key-input').value.trim();
+      const merchantId = card.querySelector('.merchant-id-input')?.value.trim() || '';
+      const webhookSecret = card.querySelector('.webhook-secret-input')?.value.trim() || '';
+      const testMode = card.querySelector('.test-mode-toggle')?.checked ?? true;
+      const achEnabled = card.querySelector('.ach-toggle')?.checked ?? false;
+
+      if (!publicKey) {
+        alert('Please enter the public/publishable key');
+        return;
+      }
+
+      this.disabled = true;
+      this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+
+      const data = {
+        provider,
+        publicKey,
+        testMode,
+        achEnabled,
+        merchantId,
+        webhookSecret
+      };
+      if (secretKey) data.secretKey = secretKey;
+
+      try {
+        const response = await fetch(basePath + '/admin/payment-configurations/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          this.innerHTML = '<i class="bi bi-check me-1"></i>Saved!';
+          this.classList.remove('btn-primary');
+          this.classList.add('btn-success');
+
+          // Clear secret key input and update placeholder
+          card.querySelector('.secret-key-input').value = '';
+          card.querySelector('.secret-key-input').placeholder = '****************';
+
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          throw new Error(result.error || 'Failed to save');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+        this.innerHTML = '<i class="bi bi-save me-1"></i>Save';
+        this.disabled = false;
+      }
+    });
+  });
+
+  // Test buttons
+  document.querySelectorAll('.test-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const provider = this.dataset.provider;
+
+      this.disabled = true;
+      this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Testing...';
+
+      try {
+        const response = await fetch(basePath + '/admin/payment-configurations/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ provider })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          this.innerHTML = '<i class="bi bi-check me-1"></i>Success!';
+          this.classList.remove('btn-outline-secondary');
+          this.classList.add('btn-success');
+          alert('Connection test successful!');
+        } else {
+          this.innerHTML = '<i class="bi bi-x me-1"></i>Failed';
+          this.classList.remove('btn-outline-secondary');
+          this.classList.add('btn-danger');
+          alert('Test failed: ' + (result.error || 'Unknown error'));
+        }
+
+        setTimeout(() => {
+          this.innerHTML = '<i class="bi bi-plug me-1"></i>Test';
+          this.classList.remove('btn-success', 'btn-danger');
+          this.classList.add('btn-outline-secondary');
+          this.disabled = false;
+        }, 2000);
+      } catch (err) {
+        alert('Error: ' + err.message);
+        this.innerHTML = '<i class="bi bi-plug me-1"></i>Test';
+        this.disabled = false;
+      }
+    });
+  });
+
+  // Enable buttons
+  document.querySelectorAll('.enable-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const provider = this.dataset.provider;
+      const providerName = providers[provider].name;
+
+      if (!confirm('Enable ' + providerName + ' as your payment provider? This will disable any other active provider.')) {
+        return;
+      }
+
+      this.disabled = true;
+      this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+      try {
+        const response = await fetch(basePath + '/admin/payment-configurations/enable', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ provider })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          location.reload();
+        } else {
+          throw new Error(result.error || 'Failed to enable');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+        this.innerHTML = '<i class="bi bi-check-lg me-1"></i>Enable';
+        this.disabled = false;
+      }
+    });
+  });
+
+  // Disable buttons
+  document.querySelectorAll('.disable-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const provider = this.dataset.provider;
+      const providerName = providers[provider].name;
+
+      if (!confirm('Disable ' + providerName + '? You will need to enable another provider to accept payments.')) {
+        return;
+      }
+
+      this.disabled = true;
+      this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+      try {
+        const response = await fetch(basePath + '/admin/payment-configurations/disable', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ provider })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          location.reload();
+        } else {
+          throw new Error(result.error || 'Failed to disable');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+        this.innerHTML = '<i class="bi bi-x-lg me-1"></i>Disable';
+        this.disabled = false;
+      }
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', renderProviders);
+</script>
+
+<style>
+.provider-card {
+  transition: all 0.3s ease;
+  position: relative;
+}
+.provider-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.text-purple {
+  color: #7c3aed !important;
+}
+details summary::-webkit-details-marker {
+  display: none;
+}
+</style>
+
+` }) %>

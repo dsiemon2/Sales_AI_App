@@ -1,0 +1,277 @@
+<%- include('../../layouts/admin', { body: `
+
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-chat-dots me-2"></i>Training Sessions</h1>
+      <p class="text-muted mb-0">View and manage sales training sessions</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary" onclick="exportSessions()">
+        <i class="bi bi-download me-1"></i> Export
+      </button>
+    </div>
+  </div>
+
+  <!-- Company/Tenant Info -->
+  ${typeof tenant !== 'undefined' && tenant && !isSuperAdmin ? '<div class="alert alert-info mb-4"><i class="bi bi-building me-2"></i>Viewing data for: <strong>' + tenant.name + '</strong></div>' : ''}
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="GET" id="filterForm" class="row g-3">
+        <input type="hidden" name="token" value="${token || ''}">
+        ${isSuperAdmin ? '<div class="col-md-2"><label class="form-label">Industry</label><select name="industryId" id="industryFilter" class="form-select" onchange="onIndustryChange()"><option value="">All Industries</option></select></div><div class="col-md-2"><label class="form-label">Company</label><select name="companyId" id="companyFilter" class="form-select"><option value="">All Companies</option></select></div>' : ''}
+        <div class="col-md-2">
+          <label class="form-label">Status</label>
+          <select name="status" class="form-select">
+            <option value="">All Statuses</option>
+            <option value="in_progress" ${filters.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+            <option value="completed" ${filters.status === 'completed' ? 'selected' : ''}>Completed</option>
+            <option value="sale_made" ${filters.status === 'sale_made' ? 'selected' : ''}>Sale Made</option>
+            <option value="no_sale" ${filters.status === 'no_sale' ? 'selected' : ''}>No Sale</option>
+            <option value="abandoned" ${filters.status === 'abandoned' ? 'selected' : ''}>Abandoned</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">User</label>
+          <select name="userId" id="userFilter" class="form-select">
+            <option value="">All Users</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Per Page</label>
+          <select name="limit" class="form-select">
+            <option value="10" ${pagination.limit === 10 ? 'selected' : ''}>10</option>
+            <option value="25" ${pagination.limit === 25 ? 'selected' : ''}>25</option>
+            <option value="50" ${pagination.limit === 50 ? 'selected' : ''}>50</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary me-2">
+            <i class="bi bi-funnel me-1"></i> Filter
+          </button>
+          <a href="${basePath}/admin/sessions?token=${token || ''}" class="btn btn-outline-secondary">Clear</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Sessions Table -->
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+              <th>User</th>
+              ${isSuperAdmin ? '<th>Company</th>' : ''}
+              <th>Product</th>
+              <th>Scenario</th>
+              <th>Status</th>
+              <th>Duration</th>
+              <th>Score</th>
+              <th>Started</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="sessionsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    ${pagination.pages > 1 ? `
+      <div class="card-footer">
+        <nav>
+          <ul class="pagination pagination-sm mb-0 justify-content-center">
+            <li class="page-item ${pagination.page === 1 ? 'disabled' : ''}">
+              <a class="page-link" href="?page=${pagination.page - 1}&limit=${pagination.limit}&status=${filters.status || ''}&userId=${filters.userId || ''}">Previous</a>
+            </li>
+            ${Array.from({length: pagination.pages}, (_, i) => i + 1).map(i => `
+              <li class="page-item ${pagination.page === i ? 'active' : ''}">
+                <a class="page-link" href="?page=${i}&limit=${pagination.limit}&status=${filters.status || ''}&userId=${filters.userId || ''}">${i}</a>
+              </li>
+            `).join('')}
+            <li class="page-item ${pagination.page === pagination.pages ? 'disabled' : ''}">
+              <a class="page-link" href="?page=${pagination.page + 1}&limit=${pagination.limit}&status=${filters.status || ''}&userId=${filters.userId || ''}">Next</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    ` : ''}
+  </div>
+</div>
+
+<script>
+  const basePath = '${basePath}';
+  const sessions = ${JSON.stringify(sessions)};
+  const users = ${JSON.stringify(users)};
+  const industries = ${JSON.stringify(industries)};
+  const companies = ${JSON.stringify(companies)};
+  const filters = ${JSON.stringify(filters)};
+  const isSuperAdmin = ${isSuperAdmin};
+
+  function renderSessions() {
+    const tbody = document.getElementById('sessionsTableBody');
+    const colSpan = isSuperAdmin ? 10 : 9;
+
+    if (sessions.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="' + colSpan + '" class="text-center py-4 text-muted"><i class="bi bi-chat-dots fs-1 d-block mb-2"></i>No training sessions found</td></tr>';
+      return;
+    }
+
+    let html = '';
+    sessions.forEach(session => {
+      const userName = session.user ? session.user.firstName + ' ' + session.user.lastName : 'Unknown';
+      const userEmail = session.user ? session.user.email : '';
+      const companyName = session.company ? session.company.name : 'Unknown';
+      const industryName = session.company && session.company.industry ? session.company.industry.name : '';
+      const productName = session.product ? session.product.name : '<span class="text-muted">-</span>';
+      const productCategory = session.product && session.product.category ? session.product.category : '';
+      const scenario = session.scenario || 'General Training';
+
+      let statusBadge = '';
+      if (session.outcome === 'sale_made') statusBadge = '<span class="badge bg-success">Sale Made</span>';
+      else if (session.outcome === 'no_sale') statusBadge = '<span class="badge bg-danger">No Sale</span>';
+      else if (session.outcome === 'abandoned') statusBadge = '<span class="badge bg-warning">Abandoned</span>';
+      else if (session.outcome === 'completed') statusBadge = '<span class="badge bg-info">Completed</span>';
+      else statusBadge = '<span class="badge bg-secondary">' + (session.outcome || 'In Progress') + '</span>';
+
+      let duration = '<span class="text-muted">-</span>';
+      if (session.durationSeconds) {
+        const mins = Math.floor(session.durationSeconds / 60);
+        const secs = session.durationSeconds % 60;
+        duration = mins + 'm ' + secs + 's';
+      }
+
+      let score = '<span class="text-muted">-</span>';
+      if (session.overallScore) {
+        const scoreClass = session.overallScore >= 80 ? 'bg-success' : session.overallScore >= 60 ? 'bg-warning' : 'bg-danger';
+        score = '<span class="badge ' + scoreClass + '">' + session.overallScore + '%</span>';
+      }
+
+      html += '<tr>';
+      html += '<td><input type="checkbox" class="row-select" value="' + session.id + '"></td>';
+      html += '<td><div class="fw-semibold">' + userName + '</div><small class="text-muted">' + userEmail + '</small></td>';
+      if (isSuperAdmin) {
+        html += '<td><div>' + companyName + '</div><small class="text-muted">' + industryName + '</small></td>';
+      }
+      html += '<td>' + (session.product ? '<div>' + productName + '</div><small class="text-muted">' + productCategory + '</small>' : '<span class="text-muted">-</span>') + '</td>';
+      html += '<td><span class="badge bg-light text-dark">' + scenario + '</span></td>';
+      html += '<td>' + statusBadge + '</td>';
+      html += '<td>' + duration + '</td>';
+      html += '<td>' + score + '</td>';
+      html += '<td>' + new Date(session.startedAt).toLocaleString() + '</td>';
+      html += '<td>';
+      html += '<a href="' + basePath + '/admin/sessions/' + session.id + '" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="View session details"><i class="bi bi-eye"></i></a> ';
+      html += '<button class="btn btn-sm btn-outline-danger" onclick="deleteSession(\\'' + session.id + '\\')" data-bs-toggle="tooltip" title="Delete session"><i class="bi bi-trash"></i></button>';
+      html += '</td>';
+      html += '</tr>';
+    });
+
+    tbody.innerHTML = html;
+    initTooltips();
+  }
+
+  function populateDropdowns() {
+    // Populate users dropdown
+    const userSelect = document.getElementById('userFilter');
+    if (userSelect) {
+      users.forEach(u => {
+        const option = document.createElement('option');
+        option.value = u.id;
+        option.textContent = u.firstName + ' ' + u.lastName;
+        if (filters.userId === u.id) option.selected = true;
+        userSelect.appendChild(option);
+      });
+    }
+
+    if (isSuperAdmin) {
+      // Populate industries dropdown
+      const industrySelect = document.getElementById('industryFilter');
+      if (industrySelect) {
+        industries.forEach(ind => {
+          const option = document.createElement('option');
+          option.value = ind.id;
+          option.textContent = ind.name;
+          if (filters.industryId === ind.id) option.selected = true;
+          industrySelect.appendChild(option);
+        });
+      }
+
+      // Populate companies dropdown
+      const companySelect = document.getElementById('companyFilter');
+      if (companySelect) {
+        companies.forEach(comp => {
+          const option = document.createElement('option');
+          option.value = comp.id;
+          option.textContent = comp.name + (comp.industry ? ' (' + comp.industry.name + ')' : '');
+          if (filters.companyId === comp.id) option.selected = true;
+          companySelect.appendChild(option);
+        });
+      }
+    }
+  }
+
+  function onIndustryChange() {
+    const industryId = document.getElementById('industryFilter').value;
+    const companySelect = document.getElementById('companyFilter');
+
+    // Clear company dropdown
+    companySelect.innerHTML = '<option value="">All Companies</option>';
+
+    // Filter companies by selected industry
+    const filteredCompanies = industryId
+      ? companies.filter(c => c.industryId === industryId)
+      : companies;
+
+    filteredCompanies.forEach(comp => {
+      const option = document.createElement('option');
+      option.value = comp.id;
+      option.textContent = comp.name;
+      companySelect.appendChild(option);
+    });
+  }
+
+  function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll').checked;
+    document.querySelectorAll('.row-select').forEach(cb => cb.checked = selectAll);
+  }
+
+  async function deleteSession(id) {
+    if (!confirm('Are you sure you want to delete this session?')) return;
+
+    try {
+      const res = await fetch(basePath + '/admin/sessions/' + id, { method: 'DELETE' });
+      if (res.ok) {
+        location.reload();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to delete session');
+      }
+    } catch (err) {
+      alert('Error deleting session');
+    }
+  }
+
+  function exportSessions() {
+    window.location.href = basePath + '/admin/analytics/api/export?format=csv';
+  }
+
+  function initTooltips() {
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+      new bootstrap.Tooltip(el);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    populateDropdowns();
+    renderSessions();
+    initTooltips();
+  });
+</script>
+
+` }) %>

@@ -1,0 +1,287 @@
+<%- include('../../layouts/admin', { body: `
+
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-receipt me-2"></i>Payment Transactions</h1>
+      <p class="text-muted mb-0">View and manage payment history</p>
+    </div>
+    <div>
+      <a href="${basePath}/admin/payment-configurations${typeof token !== 'undefined' && token ? '?token=' + token : ''}" class="btn btn-outline-primary">
+        <i class="bi bi-gear me-1"></i>Gateway Settings
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card border-0 bg-success bg-opacity-10">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="stats-icon bg-success text-white me-3">
+              <i class="bi bi-currency-dollar"></i>
+            </div>
+            <div>
+              <h3 class="mb-0">$${((totals?.amount || 0) / 100).toFixed(2)}</h3>
+              <small class="text-muted">Total Revenue</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 bg-primary bg-opacity-10">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="stats-icon bg-primary text-white me-3">
+              <i class="bi bi-check-circle"></i>
+            </div>
+            <div>
+              <h3 class="mb-0">${totals?.count || 0}</h3>
+              <small class="text-muted">Successful Payments</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 bg-info bg-opacity-10">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="stats-icon bg-info text-white me-3">
+              <i class="bi bi-list-ul"></i>
+            </div>
+            <div>
+              <h3 class="mb-0">${pagination?.total || 0}</h3>
+              <small class="text-muted">Total Transactions</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 bg-warning bg-opacity-10">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="stats-icon bg-warning text-dark me-3">
+              <i class="bi bi-arrow-repeat"></i>
+            </div>
+            <div>
+              <h3 class="mb-0">0</h3>
+              <small class="text-muted">Pending</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-body py-2">
+      <form method="GET" class="row g-2 align-items-center">
+        <div class="col-auto">
+          <select name="status" class="form-select form-select-sm">
+            <option value="">All Status</option>
+            <option value="succeeded" ${filters?.status === 'succeeded' ? 'selected' : ''}>Succeeded</option>
+            <option value="pending" ${filters?.status === 'pending' ? 'selected' : ''}>Pending</option>
+            <option value="failed" ${filters?.status === 'failed' ? 'selected' : ''}>Failed</option>
+            <option value="refunded" ${filters?.status === 'refunded' ? 'selected' : ''}>Refunded</option>
+          </select>
+        </div>
+        <div class="col-auto">
+          <select name="type" class="form-select form-select-sm">
+            <option value="">All Types</option>
+            <option value="payment" ${filters?.type === 'payment' ? 'selected' : ''}>Payment</option>
+            <option value="subscription" ${filters?.type === 'subscription' ? 'selected' : ''}>Subscription</option>
+            <option value="refund" ${filters?.type === 'refund' ? 'selected' : ''}>Refund</option>
+          </select>
+        </div>
+        <div class="col-auto">
+          <input type="date" name="startDate" class="form-control form-control-sm" placeholder="Start Date">
+        </div>
+        <div class="col-auto">
+          <input type="date" name="endDate" class="form-control form-control-sm" placeholder="End Date">
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-sm btn-primary">
+            <i class="bi bi-funnel me-1"></i>Filter
+          </button>
+          <a href="${basePath}/admin/payments${typeof token !== 'undefined' && token ? '?token=' + token : ''}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-x-lg me-1"></i>Clear
+          </a>
+        </div>
+        <div class="col-auto ms-auto">
+          <button type="button" class="btn btn-sm btn-outline-success" onclick="exportTransactions()">
+            <i class="bi bi-download me-1"></i>Export CSV
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Transactions Table -->
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Transaction ID</th>
+              <th>Customer</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${transactions && transactions.length > 0 ? transactions.map(t => `
+              <tr>
+                <td>
+                  <small>${new Date(t.createdAt).toLocaleDateString()}</small><br>
+                  <small class="text-muted">${new Date(t.createdAt).toLocaleTimeString()}</small>
+                </td>
+                <td>
+                  <code class="small">${t.externalId || t.id.substring(0, 12)}...</code>
+                </td>
+                <td>
+                  ${t.customerName || 'N/A'}<br>
+                  <small class="text-muted">${t.customerEmail || ''}</small>
+                </td>
+                <td>
+                  <span class="badge bg-${t.type === 'payment' ? 'primary' : t.type === 'subscription' ? 'info' : 'secondary'}">
+                    ${t.type}
+                  </span>
+                </td>
+                <td>
+                  <strong>$${(t.amount / 100).toFixed(2)}</strong>
+                  <small class="text-muted">${t.currency}</small>
+                </td>
+                <td>
+                  <span class="badge bg-${t.status === 'succeeded' ? 'success' : t.status === 'pending' ? 'warning' : t.status === 'failed' ? 'danger' : 'secondary'}">
+                    ${t.status}
+                  </span>
+                </td>
+                <td>
+                  <button class="btn btn-sm btn-outline-primary" onclick="viewTransaction('${t.id}')"
+                    data-bs-toggle="tooltip" title="View Details">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                  ${t.status === 'succeeded' ? `
+                    <button class="btn btn-sm btn-outline-warning" onclick="refundTransaction('${t.id}')"
+                      data-bs-toggle="tooltip" title="Issue Refund">
+                      <i class="bi bi-arrow-counterclockwise"></i>
+                    </button>
+                  ` : ''}
+                </td>
+              </tr>
+            `).join('') : `
+              <tr>
+                <td colspan="7" class="text-center py-5">
+                  <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                  <p class="text-muted mb-0">No transactions found</p>
+                  <small class="text-muted">Transactions will appear here once payments are processed</small>
+                </td>
+              </tr>
+            `}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    ${pagination && pagination.pages > 1 ? `
+      <div class="card-footer d-flex justify-content-between align-items-center">
+        <small class="text-muted">
+          Showing ${((pagination.page - 1) * pagination.limit) + 1} to ${Math.min(pagination.page * pagination.limit, pagination.total)} of ${pagination.total} transactions
+        </small>
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item ${pagination.page === 1 ? 'disabled' : ''}">
+              <a class="page-link" href="?page=${pagination.page - 1}${filters?.status ? '&status=' + filters.status : ''}${filters?.type ? '&type=' + filters.type : ''}">
+                <i class="bi bi-chevron-left"></i>
+              </a>
+            </li>
+            ${Array.from({length: Math.min(5, pagination.pages)}, (_, i) => {
+              const pageNum = Math.max(1, Math.min(pagination.page - 2, pagination.pages - 4)) + i;
+              if (pageNum > pagination.pages) return '';
+              return `
+                <li class="page-item ${pagination.page === pageNum ? 'active' : ''}">
+                  <a class="page-link" href="?page=${pageNum}${filters?.status ? '&status=' + filters.status : ''}${filters?.type ? '&type=' + filters.type : ''}">${pageNum}</a>
+                </li>
+              `;
+            }).join('')}
+            <li class="page-item ${pagination.page === pagination.pages ? 'disabled' : ''}">
+              <a class="page-link" href="?page=${pagination.page + 1}${filters?.status ? '&status=' + filters.status : ''}${filters?.type ? '&type=' + filters.type : ''}">
+                <i class="bi bi-chevron-right"></i>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    ` : ''}
+  </div>
+</div>
+
+<!-- Transaction Detail Modal -->
+<div class="modal fade" id="transactionModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>Transaction Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="transactionDetails">
+        <!-- Populated by JavaScript -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+  });
+});
+
+function viewTransaction(id) {
+  // In a real implementation, this would fetch transaction details from the server
+  document.getElementById('transactionDetails').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div><p class="mt-2">Loading...</p></div>';
+  new bootstrap.Modal(document.getElementById('transactionModal')).show();
+
+  // Simulate loading
+  setTimeout(() => {
+    document.getElementById('transactionDetails').innerHTML = \`
+      <p class="text-muted">Transaction ID: <code>\${id}</code></p>
+      <p>Full transaction details would be displayed here including:</p>
+      <ul>
+        <li>Payment method details</li>
+        <li>Customer information</li>
+        <li>Invoice/receipt data</li>
+        <li>Related session information</li>
+      </ul>
+    \`;
+  }, 500);
+}
+
+function refundTransaction(id) {
+  if (confirm('Are you sure you want to issue a refund for this transaction?')) {
+    alert('Refund functionality would process the refund through the payment gateway.');
+  }
+}
+
+function exportTransactions() {
+  // In a real implementation, this would trigger a CSV download
+  alert('Export functionality would generate a CSV file of all transactions based on current filters.');
+}
+</script>
+
+` }) %>

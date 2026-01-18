@@ -1,0 +1,453 @@
+<%- include('../../layouts/admin', { body: `
+
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-grid me-2"></i>Industries</h1>
+      <p class="text-muted mb-0">Manage industry configurations across the platform</p>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addIndustryModal">
+      <i class="bi bi-plus-lg me-1"></i> Add Industry
+    </button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card bg-primary text-white">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <i class="bi bi-grid fs-2 me-3"></i>
+            <div>
+              <div class="h4 mb-0" id="totalIndustries">0</div>
+              <small>Total Industries</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-success text-white">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <i class="bi bi-check-circle fs-2 me-3"></i>
+            <div>
+              <div class="h4 mb-0" id="activeIndustries">0</div>
+              <small>Active</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-info text-white">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <i class="bi bi-building fs-2 me-3"></i>
+            <div>
+              <div class="h4 mb-0" id="totalCompanies">0</div>
+              <small>Total Companies</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Industries Table -->
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+              <th>Industry</th>
+              <th>Code</th>
+              <th>Description</th>
+              <th>Companies</th>
+              <th>Sort Order</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="industriesTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Industry Modal -->
+<div class="modal fade" id="addIndustryModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-lg me-2"></i>Add Industry</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="addIndustryForm">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Industry Name <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="form-control" required placeholder="e.g., Automotive Sales">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Industry Code <span class="text-danger">*</span></label>
+              <input type="text" name="code" class="form-control" required placeholder="e.g., auto" pattern="[a-z_]+" title="Lowercase letters and underscores only">
+              <small class="text-muted">Lowercase letters and underscores only</small>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Description</label>
+              <textarea name="description" class="form-control" rows="2" placeholder="Brief description of the industry..."></textarea>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Icon Class</label>
+              <input type="text" name="icon" class="form-control" placeholder="e.g., bi bi-car-front" value="bi bi-briefcase">
+              <small class="text-muted">Bootstrap Icons class</small>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Primary Color</label>
+              <div class="input-group">
+                <input type="color" name="colorPrimary" class="form-control form-control-color" value="#2563eb">
+                <input type="text" class="form-control color-text" value="#2563eb" readonly>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Secondary Color</label>
+              <div class="input-group">
+                <input type="color" name="colorSecondary" class="form-control form-control-color" value="#1d4ed8">
+                <input type="text" class="form-control color-text" value="#1d4ed8" readonly>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Sort Order</label>
+              <input type="number" name="sortOrder" class="form-control" value="0" min="0">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Status</label>
+              <select name="isActive" class="form-select">
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Create Industry</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Industry Modal -->
+<div class="modal fade" id="editIndustryModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Industry</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="editIndustryForm">
+        <input type="hidden" name="id" id="editIndustryId">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Industry Name <span class="text-danger">*</span></label>
+              <input type="text" name="name" id="editIndustryName" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Industry Code <span class="text-danger">*</span></label>
+              <input type="text" name="code" id="editIndustryCode" class="form-control" required pattern="[a-z_]+" title="Lowercase letters and underscores only">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Description</label>
+              <textarea name="description" id="editIndustryDescription" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Icon Class</label>
+              <input type="text" name="icon" id="editIndustryIcon" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Primary Color</label>
+              <div class="input-group">
+                <input type="color" name="colorPrimary" id="editIndustryColorPrimary" class="form-control form-control-color">
+                <input type="text" class="form-control color-text" id="editIndustryColorPrimaryText" readonly>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Secondary Color</label>
+              <div class="input-group">
+                <input type="color" name="colorSecondary" id="editIndustryColorSecondary" class="form-control form-control-color">
+                <input type="text" class="form-control color-text" id="editIndustryColorSecondaryText" readonly>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Sort Order</label>
+              <input type="number" name="sortOrder" id="editIndustrySortOrder" class="form-control" min="0">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Status</label>
+              <select name="isActive" id="editIndustryActive" class="form-select">
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- View Industry Modal -->
+<div class="modal fade" id="viewIndustryModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-eye me-2"></i>Industry Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="viewIndustryContent">
+        <!-- Content populated by JS -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const basePath = '${basePath}';
+  const token = '${token || ''}';
+  const industries = ${JSON.stringify(industries)};
+
+  function renderIndustries() {
+    const tbody = document.getElementById('industriesTableBody');
+
+    // Update stats
+    document.getElementById('totalIndustries').textContent = industries.length;
+    document.getElementById('activeIndustries').textContent = industries.filter(i => i.isActive).length;
+    document.getElementById('totalCompanies').textContent = industries.reduce((sum, i) => sum + (i._count?.companies || 0), 0);
+
+    if (industries.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-muted"><i class="bi bi-grid fs-1 d-block mb-2"></i>No industries configured.<br><small>Add your first industry to get started.</small></td></tr>';
+      return;
+    }
+
+    let html = '';
+    industries.forEach(ind => {
+      html += '<tr>';
+      html += '<td><input type="checkbox" class="row-select" value="' + ind.id + '"></td>';
+      html += '<td><span class="d-flex align-items-center"><i class="' + (ind.icon || 'bi bi-briefcase') + ' me-2" style="color:' + (ind.colorPrimary || '#2563eb') + '; font-size: 1.25rem;"></i><span class="fw-semibold">' + ind.name + '</span></span></td>';
+      html += '<td><code class="bg-light px-2 py-1 rounded">' + ind.code + '</code></td>';
+      html += '<td class="text-muted small" style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + (ind.description || '-') + '</td>';
+      html += '<td><span class="badge bg-info">' + (ind._count?.companies || 0) + '</span></td>';
+      html += '<td>' + (ind.sortOrder || 0) + '</td>';
+      html += '<td><span class="badge ' + (ind.isActive ? 'bg-success' : 'bg-secondary') + '">' + (ind.isActive ? 'Active' : 'Inactive') + '</span></td>';
+      html += '<td>';
+      html += '<button class="btn btn-sm btn-outline-primary me-1" onclick="viewIndustry(\\'' + ind.id + '\\')" data-bs-toggle="tooltip" title="View details"><i class="bi bi-eye"></i></button>';
+      html += '<button class="btn btn-sm btn-outline-secondary me-1" onclick="editIndustry(\\'' + ind.id + '\\')" data-bs-toggle="tooltip" title="Edit industry"><i class="bi bi-pencil"></i></button>';
+      html += '<button class="btn btn-sm btn-outline-danger" onclick="deleteIndustry(\\'' + ind.id + '\\')" data-bs-toggle="tooltip" title="Delete industry"><i class="bi bi-trash"></i></button>';
+      html += '</td>';
+      html += '</tr>';
+    });
+
+    tbody.innerHTML = html;
+    initTooltips();
+  }
+
+  function toggleSelectAll() {
+    const checked = document.getElementById('selectAll').checked;
+    document.querySelectorAll('.row-select').forEach(cb => cb.checked = checked);
+  }
+
+  function viewIndustry(id) {
+    const ind = industries.find(i => i.id === id);
+    if (!ind) return;
+
+    const content = document.getElementById('viewIndustryContent');
+    content.innerHTML = \`
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label text-muted small">Name</label>
+          <div class="fw-semibold">\${ind.name}</div>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label text-muted small">Code</label>
+          <div><code class="bg-light px-2 py-1 rounded">\${ind.code}</code></div>
+        </div>
+        <div class="col-12 mb-3">
+          <label class="form-label text-muted small">Description</label>
+          <div>\${ind.description || '-'}</div>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label text-muted small">Icon</label>
+          <div><i class="\${ind.icon || 'bi bi-briefcase'} me-2" style="font-size: 1.5rem; color: \${ind.colorPrimary || '#2563eb'}"></i> \${ind.icon || 'bi bi-briefcase'}</div>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label text-muted small">Primary Color</label>
+          <div class="d-flex align-items-center"><span class="d-inline-block rounded me-2" style="width: 24px; height: 24px; background: \${ind.colorPrimary || '#2563eb'}"></span> \${ind.colorPrimary || '#2563eb'}</div>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label text-muted small">Secondary Color</label>
+          <div class="d-flex align-items-center"><span class="d-inline-block rounded me-2" style="width: 24px; height: 24px; background: \${ind.colorSecondary || '#1d4ed8'}"></span> \${ind.colorSecondary || '#1d4ed8'}</div>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label text-muted small">Companies</label>
+          <div>\${ind._count?.companies || 0}</div>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label text-muted small">Sort Order</label>
+          <div>\${ind.sortOrder || 0}</div>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label text-muted small">Status</label>
+          <div><span class="badge \${ind.isActive ? 'bg-success' : 'bg-secondary'}">\${ind.isActive ? 'Active' : 'Inactive'}</span></div>
+        </div>
+      </div>
+    \`;
+
+    const modal = new bootstrap.Modal(document.getElementById('viewIndustryModal'));
+    modal.show();
+  }
+
+  function editIndustry(id) {
+    const ind = industries.find(i => i.id === id);
+    if (!ind) return;
+
+    document.getElementById('editIndustryId').value = ind.id;
+    document.getElementById('editIndustryName').value = ind.name;
+    document.getElementById('editIndustryCode').value = ind.code;
+    document.getElementById('editIndustryDescription').value = ind.description || '';
+    document.getElementById('editIndustryIcon').value = ind.icon || 'bi bi-briefcase';
+    document.getElementById('editIndustryColorPrimary').value = ind.colorPrimary || '#2563eb';
+    document.getElementById('editIndustryColorPrimaryText').value = ind.colorPrimary || '#2563eb';
+    document.getElementById('editIndustryColorSecondary').value = ind.colorSecondary || '#1d4ed8';
+    document.getElementById('editIndustryColorSecondaryText').value = ind.colorSecondary || '#1d4ed8';
+    document.getElementById('editIndustrySortOrder').value = ind.sortOrder || 0;
+    document.getElementById('editIndustryActive').value = ind.isActive ? 'true' : 'false';
+
+    const modal = new bootstrap.Modal(document.getElementById('editIndustryModal'));
+    modal.show();
+  }
+
+  async function deleteIndustry(id) {
+    const ind = industries.find(i => i.id === id);
+    if (!ind) return;
+
+    if (ind._count?.companies > 0) {
+      alert('Cannot delete industry with existing companies. Please reassign or delete companies first.');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete the industry "' + ind.name + '"?')) return;
+
+    try {
+      const res = await fetch(basePath + '/api/v1/industries/' + id + '?token=' + token, { method: 'DELETE' });
+      if (res.ok) {
+        location.reload();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to delete industry');
+      }
+    } catch (err) {
+      alert('Error deleting industry');
+    }
+  }
+
+  function initTooltips() {
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+      new bootstrap.Tooltip(el);
+    });
+  }
+
+  // Color picker sync
+  document.querySelectorAll('input[type="color"]').forEach(colorInput => {
+    colorInput.addEventListener('input', (e) => {
+      const textInput = e.target.parentElement.querySelector('.color-text');
+      if (textInput) textInput.value = e.target.value;
+    });
+  });
+
+  // Add form submission
+  document.getElementById('addIndustryForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = {
+      name: formData.get('name'),
+      code: formData.get('code'),
+      description: formData.get('description'),
+      icon: formData.get('icon'),
+      colorPrimary: formData.get('colorPrimary'),
+      colorSecondary: formData.get('colorSecondary'),
+      sortOrder: parseInt(formData.get('sortOrder')) || 0,
+      isActive: formData.get('isActive') === 'true'
+    };
+
+    try {
+      const res = await fetch(basePath + '/api/v1/industries?token=' + token, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (res.ok) {
+        location.reload();
+      } else {
+        const result = await res.json();
+        alert(result.error || 'Failed to create industry');
+      }
+    } catch (err) {
+      alert('Error creating industry');
+    }
+  });
+
+  // Edit form submission
+  document.getElementById('editIndustryForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const id = formData.get('id');
+    const data = {
+      name: formData.get('name'),
+      code: formData.get('code'),
+      description: formData.get('description'),
+      icon: formData.get('icon'),
+      colorPrimary: formData.get('colorPrimary'),
+      colorSecondary: formData.get('colorSecondary'),
+      sortOrder: parseInt(formData.get('sortOrder')) || 0,
+      isActive: formData.get('isActive') === 'true'
+    };
+
+    try {
+      const res = await fetch(basePath + '/api/v1/industries/' + id + '?token=' + token, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (res.ok) {
+        location.reload();
+      } else {
+        const result = await res.json();
+        alert(result.error || 'Failed to update industry');
+      }
+    } catch (err) {
+      alert('Error updating industry');
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    renderIndustries();
+  });
+</script>
+
+` }) %>

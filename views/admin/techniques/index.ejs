@@ -1,0 +1,364 @@
+<%- include('../../layouts/admin', { body: `
+
+<style>
+  .tech-card { transition: all 0.2s; border-radius: 8px; }
+  .tech-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  .tech-card blockquote { border-left: 4px solid #6c757d; padding-left: 12px; background: #f8f9fa; padding: 10px 12px; margin: 0; font-style: italic; font-size: 0.9em; border-radius: 4px; }
+  .category-header-discovery { background: linear-gradient(135deg, #0dcaf0, #0aa2c0); color: white; }
+  .category-header-positioning { background: linear-gradient(135deg, #0d6efd, #0a58ca); color: white; }
+  .category-header-objection_handling { background: linear-gradient(135deg, #dc3545, #bb2d3b); color: white; }
+  .category-header-closing { background: linear-gradient(135deg, #198754, #157347); color: white; }
+  .category-header-follow_up { background: linear-gradient(135deg, #6f42c1, #5a32a3); color: white; }
+  .category-header-upselling { background: linear-gradient(135deg, #fd7e14, #e66000); color: white; }
+  .category-header-general { background: linear-gradient(135deg, #6c757d, #5c636a); color: white; }
+</style>
+
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-lightbulb text-primary me-2"></i>Sales Techniques</h1>
+      <p class="text-muted mb-0">Enable or disable sales techniques. The AI will use enabled techniques during conversations.</p>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTechniqueModal">
+      <i class="bi bi-plus-lg me-1"></i> Add Technique
+    </button>
+  </div>
+
+  <!-- Company Info (for non-super-admin) -->
+  ${typeof tenant !== 'undefined' && tenant && !isSuperAdmin ? '<div class="alert alert-info mb-4"><i class="bi bi-building me-2"></i>Viewing data for: <strong>' + tenant.name + '</strong></div>' : ''}
+
+  <!-- Filters (SUPER_ADMIN only) -->
+  ${isSuperAdmin ? '<div class="card mb-4"><div class="card-body"><form method="GET" id="filterForm" class="row g-3"><input type="hidden" name="token" value="' + (token || '') + '"><div class="col-md-3"><label class="form-label">Industry</label><select name="industryId" id="industryFilter" class="form-select" onchange="onIndustryChange()"><option value="">All Industries</option></select></div><div class="col-md-3"><label class="form-label">Company</label><select name="companyId" id="companyFilter" class="form-select"><option value="">All Companies</option></select></div><div class="col-md-3"><label class="form-label">Category</label><select name="category" id="categoryFilter" class="form-select"><option value="">All Categories</option></select></div><div class="col-md-3 d-flex align-items-end"><button type="submit" class="btn btn-primary me-2"><i class="bi bi-funnel me-1"></i> Filter</button><a href="' + basePath + '/admin/techniques?token=' + (token || '') + '" class="btn btn-outline-secondary">Clear</a></div></form></div></div>' : ''}
+
+  <!-- Techniques List -->
+  <div id="techniquesList"></div>
+</div>
+
+<!-- Add Technique Modal -->
+<div class="modal fade" id="addTechniqueModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-lg me-2"></i>Add Technique</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="addTechniqueForm">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Technique Name *</label>
+              <input type="text" name="name" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Category</label>
+              <select name="category" class="form-control">
+                <option value="discovery">Discovery</option>
+                <option value="positioning">Positioning</option>
+                <option value="objection_handling">Objection Handling</option>
+                <option value="closing">Closing</option>
+                <option value="follow_up">Follow Up</option>
+                <option value="upselling">Upselling</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Description</label>
+              <textarea name="description" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Script *</label>
+              <textarea name="script" class="form-control" rows="3" required placeholder="The exact words to use..."></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Effectiveness</label>
+              <select name="effectiveness" class="form-control">
+                <option value="high">High</option>
+                <option value="medium" selected>Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Technique Modal -->
+<div class="modal fade" id="editTechniqueModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Technique</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="editTechniqueForm">
+        <input type="hidden" name="id" id="editTechniqueId">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Technique Name *</label>
+              <input type="text" name="name" id="editName" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Category</label>
+              <select name="category" id="editCategory" class="form-control">
+                <option value="discovery">Discovery</option>
+                <option value="positioning">Positioning</option>
+                <option value="objection_handling">Objection Handling</option>
+                <option value="closing">Closing</option>
+                <option value="follow_up">Follow Up</option>
+                <option value="upselling">Upselling</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Description</label>
+              <textarea name="description" id="editDescription" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Script *</label>
+              <textarea name="script" id="editScript" class="form-control" rows="3" required></textarea>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Effectiveness</label>
+              <select name="effectiveness" id="editEffectiveness" class="form-control">
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <div class="form-check mt-4">
+                <input type="checkbox" name="isActive" class="form-check-input" id="editIsActive">
+                <label class="form-check-label" for="editIsActive">Active</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const techniques = ${JSON.stringify(techniques)};
+  const basePath = '${basePath}';
+  const industries = ${JSON.stringify(industries)};
+  const companies = ${JSON.stringify(companies)};
+  const filters = ${JSON.stringify(filters)};
+  const isSuperAdmin = ${isSuperAdmin};
+  const categories = ${JSON.stringify(categories)};
+
+  // Initialize filter dropdowns for SUPER_ADMIN
+  function initFilters() {
+    if (!isSuperAdmin) return;
+
+    const industrySelect = document.getElementById('industryFilter');
+    const companySelect = document.getElementById('companyFilter');
+    const categorySelect = document.getElementById('categoryFilter');
+
+    // Populate industries
+    industries.forEach(ind => {
+      const opt = document.createElement('option');
+      opt.value = ind.id;
+      opt.textContent = ind.name;
+      if (filters.industryId === ind.id) opt.selected = true;
+      industrySelect.appendChild(opt);
+    });
+
+    // Populate companies
+    updateCompanyDropdown();
+
+    // Populate categories
+    categories.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      if (filters.category === cat) opt.selected = true;
+      categorySelect.appendChild(opt);
+    });
+  }
+
+  function updateCompanyDropdown() {
+    const industrySelect = document.getElementById('industryFilter');
+    const companySelect = document.getElementById('companyFilter');
+    const selectedIndustry = industrySelect ? industrySelect.value : '';
+
+    companySelect.innerHTML = '<option value="">All Companies</option>';
+
+    const filteredCompanies = selectedIndustry
+      ? companies.filter(c => c.industryId === selectedIndustry)
+      : companies;
+
+    filteredCompanies.forEach(comp => {
+      const opt = document.createElement('option');
+      opt.value = comp.id;
+      opt.textContent = comp.name + (comp.industry ? ' (' + comp.industry.name + ')' : '');
+      if (filters.companyId === comp.id) opt.selected = true;
+      companySelect.appendChild(opt);
+    });
+  }
+
+  function onIndustryChange() {
+    updateCompanyDropdown();
+  }
+
+  function renderTechniques() {
+    const container = document.getElementById('techniquesList');
+
+    if (techniques.length === 0) {
+      container.innerHTML = '<div class="card"><div class="card-body text-center py-5 text-muted"><i class="bi bi-lightbulb fs-1 d-block mb-2"></i>No techniques found. Add your first technique to get started.</div></div>';
+      return;
+    }
+
+    const grouped = {};
+    techniques.forEach(t => {
+      const cat = t.category || 'general';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(t);
+    });
+
+    const icons = {
+      discovery: 'search',
+      positioning: 'bullseye',
+      objection_handling: 'shield-check',
+      closing: 'check-circle',
+      follow_up: 'arrow-repeat',
+      upselling: 'graph-up',
+      general: 'lightbulb'
+    };
+
+    let html = '';
+    for (const cat in grouped) {
+      const catName = cat.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const icon = icons[cat] || 'lightbulb';
+
+      html += '<div class="card mb-4">';
+      html += '<div class="card-header category-header-' + cat + '">';
+      html += '<h5 class="mb-0"><i class="bi bi-' + icon + ' me-2"></i>' + catName + ' Techniques</h5>';
+      html += '</div>';
+      html += '<div class="card-body"><div class="row">';
+
+      grouped[cat].forEach(tech => {
+        const effBadge = tech.effectiveness === 'high' ? 'bg-success' : tech.effectiveness === 'medium' ? 'bg-warning text-dark' : 'bg-secondary';
+        const effText = tech.effectiveness ? tech.effectiveness.charAt(0).toUpperCase() + tech.effectiveness.slice(1) : 'Medium';
+
+        html += '<div class="col-md-6 mb-3">';
+        html += '<div class="card h-100 tech-card">';
+        html += '<div class="card-body">';
+        html += '<div class="d-flex justify-content-between align-items-start">';
+        html += '<div style="flex: 1;">';
+        html += '<h6 class="mb-1">' + tech.name + '</h6>';
+        html += '<p class="text-muted small mb-2">' + (tech.description || 'No description') + '</p>';
+        html += '<blockquote>' + (tech.script || 'No script') + '</blockquote>';
+        html += '</div>';
+        html += '<div class="form-check form-switch ms-3">';
+        html += '<input class="form-check-input" type="checkbox" ' + (tech.isActive ? 'checked' : '') + ' onchange="toggleTechnique(\\'' + tech.id + '\\', this.checked)">';
+        html += '</div>';
+        html += '</div>';
+        html += '<div class="mt-3 d-flex justify-content-between align-items-center">';
+        html += '<span class="badge ' + effBadge + '">' + effText + ' Effectiveness</span>';
+        html += '<div>';
+        html += '<button class="btn btn-sm btn-outline-secondary me-1" onclick="editTechnique(\\'' + tech.id + '\\')"><i class="bi bi-pencil"></i></button>';
+        html += '<button class="btn btn-sm btn-outline-danger" onclick="deleteTechnique(\\'' + tech.id + '\\')"><i class="bi bi-trash"></i></button>';
+        html += '</div>';
+        html += '</div>';
+        html += '</div></div></div>';
+      });
+
+      html += '</div></div></div>';
+    }
+
+    container.innerHTML = html;
+  }
+
+  async function toggleTechnique(id, enabled) {
+    try {
+      await fetch(basePath + '/admin/techniques/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: enabled })
+      });
+    } catch (err) {
+      console.error('Error toggling technique:', err);
+      location.reload();
+    }
+  }
+
+  function editTechnique(id) {
+    const tech = techniques.find(t => t.id === id);
+    if (!tech) return;
+
+    document.getElementById('editTechniqueId').value = tech.id;
+    document.getElementById('editName').value = tech.name || '';
+    document.getElementById('editCategory').value = tech.category || 'discovery';
+    document.getElementById('editDescription').value = tech.description || '';
+    document.getElementById('editScript').value = tech.script || '';
+    document.getElementById('editEffectiveness').value = tech.effectiveness || 'medium';
+    document.getElementById('editIsActive').checked = tech.isActive;
+
+    new bootstrap.Modal(document.getElementById('editTechniqueModal')).show();
+  }
+
+  document.getElementById('addTechniqueForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+    try {
+      const res = await fetch(basePath + '/admin/techniques', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) location.reload();
+      else alert((await res.json()).error || 'Failed to create technique');
+    } catch (err) {
+      alert('Error creating technique');
+    }
+  });
+
+  document.getElementById('editTechniqueForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const id = document.getElementById('editTechniqueId').value;
+    const data = Object.fromEntries(new FormData(form));
+    data.isActive = form.isActive.checked;
+
+    try {
+      const res = await fetch(basePath + '/admin/techniques/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) location.reload();
+      else alert((await res.json()).error || 'Failed to update technique');
+    } catch (err) {
+      alert('Error updating technique');
+    }
+  });
+
+  async function deleteTechnique(id) {
+    if (!confirm('Delete this technique?')) return;
+    try {
+      const res = await fetch(basePath + '/admin/techniques/' + id, { method: 'DELETE' });
+      if (res.ok) location.reload();
+      else alert('Failed to delete technique');
+    } catch (err) {
+      alert('Error deleting technique');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initFilters();
+    renderTechniques();
+  });
+</script>
+
+` }) %>

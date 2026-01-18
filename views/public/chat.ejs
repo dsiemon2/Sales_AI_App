@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | <%= appName %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-blue: #0B1F3B;
+      --accent-orange: #FF6A00;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0B1F3B 0%, #1a365d 100%);
+      min-height: 100vh;
+      color: white;
+      font-size: 1.1rem;
+    }
+    .chat-header {
+      background: rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .chat-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .status-indicator {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 10px;
+    }
+    .status-indicator.disconnected { background: #dc3545; }
+    .status-indicator.connected { background: #198754; }
+    .status-indicator.listening { background: #0dcaf0; animation: pulse 1s infinite; }
+    .status-indicator.speaking { background: #ffc107; animation: pulse 0.5s infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .mic-button {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      font-size: 4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      background: linear-gradient(135deg, #FF6A00 0%, #ff8533 100%);
+      border: 4px solid #fff;
+      box-shadow: 0 0 30px rgba(255, 106, 0, 0.5), 0 8px 32px rgba(0, 0, 0, 0.3);
+      color: white;
+    }
+    .mic-button:hover {
+      transform: scale(1.05);
+      background: linear-gradient(135deg, #e55f00 0%, #ff6a00 100%);
+      box-shadow: 0 0 40px rgba(255, 106, 0, 0.7), 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+    .mic-button.active {
+      background: linear-gradient(135deg, #0dcaf0 0%, #5dd9f7 100%) !important;
+      border-color: #fff !important;
+      box-shadow: 0 0 40px rgba(13, 202, 240, 0.7), 0 8px 32px rgba(0, 0, 0, 0.3);
+      animation: pulse-border 1s infinite;
+    }
+    @keyframes pulse-border {
+      0%, 100% { box-shadow: 0 0 30px rgba(255, 106, 0, 0.5), 0 8px 32px rgba(0, 0, 0, 0.3); }
+      50% { box-shadow: 0 0 50px rgba(255, 106, 0, 0.8), 0 8px 32px rgba(0, 0, 0, 0.3); }
+    }
+    .transcript-box {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 1.5rem;
+      max-height: 350px;
+      overflow-y: auto;
+      font-size: 1.2rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .message {
+      padding: 0.75rem 1.25rem;
+      border-radius: 12px;
+      margin-bottom: 0.75rem;
+    }
+    .message.user {
+      background: linear-gradient(135deg, rgba(255, 106, 0, 0.7) 0%, rgba(255, 133, 51, 0.7) 100%);
+      text-align: right;
+      border: 1px solid rgba(255, 106, 0, 0.5);
+    }
+    .message.assistant {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .visualizer {
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .visualizer-bar {
+      width: 6px;
+      background: var(--accent-orange);
+      border-radius: 3px;
+      transition: height 0.1s;
+    }
+    .voice-select {
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.3);
+      color: white;
+      font-size: 1.1rem;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+    }
+    .voice-select option {
+      background: #0B1F3B;
+      color: white;
+    }
+    .help-text {
+      font-size: 1.1rem;
+      color: rgba(255,255,255,0.8);
+    }
+    .quick-command {
+      background: rgba(255,255,255,0.15);
+      border: 2px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .quick-command:hover {
+      background: rgba(255, 106, 0, 0.3);
+      border-color: var(--accent-orange);
+      box-shadow: 0 4px 15px rgba(255, 106, 0, 0.3);
+    }
+    .card {
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.1) !important;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2) !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+    .card-header {
+      color: white;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    .card-header h5 {
+      color: white;
+      margin: 0;
+    }
+    .btn-lg {
+      font-size: 1.2rem;
+      padding: 0.75rem 1.5rem;
+    }
+    .dropdown-menu {
+      background: #1a365d;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .dropdown-item {
+      color: white;
+    }
+    .dropdown-item:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+    .dropdown-divider {
+      border-color: rgba(255,255,255,0.1);
+    }
+  </style>
+</head>
+<body>
+  <!-- Top Navigation Bar -->
+  <header class="chat-header">
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-3">
+        <i class="bi bi-lightning-charge-fill text-warning fs-4"></i>
+        <div>
+          <h5 class="mb-0 fw-bold"><%= appName %></h5>
+          <small class="opacity-75">
+            <% if (industry) { %>
+              <%= industry.name %> Training
+            <% } else { %>
+              Sales Training Session
+            <% } %>
+          </small>
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        <span class="badge bg-secondary" id="connectionBadge">
+          <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i>Disconnected
+        </span>
+        <div class="dropdown">
+          <button class="btn btn-sm btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle me-1"></i><%= user.firstName %>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="<%= basePath %>/admin"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="<%= basePath %>/admin/logout"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="chat-container">
+    <!-- Voice Settings -->
+    <div class="text-center mb-4">
+      <label class="help-text me-2">Voice:</label>
+      <select class="voice-select" id="voiceSelect">
+        <optgroup label="Female Voices">
+          <option value="alloy">Alloy - Friendly</option>
+          <option value="nova">Nova - Warm</option>
+          <option value="shimmer">Shimmer - Gentle</option>
+        </optgroup>
+        <optgroup label="Male Voices">
+          <option value="echo">Echo - Calm</option>
+          <option value="onyx">Onyx - Deep</option>
+          <option value="fable">Fable - Expressive</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <!-- Main Voice Interface -->
+    <div class="card mb-4 shadow-lg">
+      <div class="card-body text-center py-5">
+        <div class="mb-3">
+          <span class="status-indicator" id="statusIndicator"></span>
+          <span id="statusText" style="font-size: 1.3rem;">Tap to Connect</span>
+        </div>
+
+        <div class="visualizer mb-4" id="visualizer"></div>
+
+        <button class="btn mic-button mx-auto mb-3" id="micButton" disabled>
+          <i class="bi bi-mic-fill"></i>
+        </button>
+
+        <p class="help-text">Tap the button and speak naturally</p>
+      </div>
+    </div>
+
+    <!-- Conversation Transcript -->
+    <div class="card mb-4 shadow-lg">
+      <div class="card-header bg-transparent border-0 pt-3">
+        <h5><i class="bi bi-chat-dots me-2"></i>Conversation</h5>
+      </div>
+      <div class="card-body pt-0">
+        <div class="transcript-box" id="transcript">
+          <div class="message assistant">
+            <%= greeting %>
+            <% if (industry) { %>
+            <br><br>I see you're training for <strong><%= industry.name %></strong>. Let's practice your sales skills!
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Commands for Sales Training -->
+    <div class="card mb-4 shadow-lg">
+      <div class="card-header bg-transparent border-0 pt-3">
+        <h5><i class="bi bi-lightning me-2"></i>Try Saying...</h5>
+      </div>
+      <div class="card-body pt-0">
+        <div class="row g-2">
+          <div class="col-6">
+            <div class="quick-command" id="quickCmd1">
+              <i class="bi bi-person-raised-hand text-info me-2"></i>How do I handle objections?
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="quick-command" id="quickCmd2">
+              <i class="bi bi-question-circle text-warning me-2"></i>Give me discovery questions
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="quick-command" id="quickCmd3">
+              <i class="bi bi-trophy text-success me-2"></i>Help me close this deal
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="quick-command" id="quickCmd4">
+              <i class="bi bi-play-circle text-primary me-2"></i>Start a roleplay scenario
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Text Input Fallback -->
+    <div class="card mb-4 shadow-lg">
+      <div class="card-header bg-transparent border-0 pt-3">
+        <h5><i class="bi bi-keyboard me-2"></i>Or Type Here</h5>
+      </div>
+      <div class="card-body pt-0">
+        <div class="input-group input-group-lg">
+          <input type="text" class="form-control bg-dark text-white border-secondary"
+                 id="textInput" placeholder="Type your message..." disabled style="font-size: 1.2rem;">
+          <button class="btn btn-warning" id="sendButton" disabled>
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Control Buttons -->
+    <div class="text-center">
+      <button class="btn btn-warning btn-lg me-2" id="connectButton">
+        <i class="bi bi-power me-2"></i>Connect
+      </button>
+      <button class="btn btn-outline-danger btn-lg" id="endButton" disabled>
+        <i class="bi bi-x-circle me-2"></i>Disconnect
+      </button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const basePath = '<%= basePath %>';
+    const statusIndicator = document.getElementById('statusIndicator');
+    const statusText = document.getElementById('statusText');
+    const connectionBadge = document.getElementById('connectionBadge');
+    const micButton = document.getElementById('micButton');
+    const transcript = document.getElementById('transcript');
+    const textInput = document.getElementById('textInput');
+    const sendButton = document.getElementById('sendButton');
+    const connectButton = document.getElementById('connectButton');
+    const endButton = document.getElementById('endButton');
+    const visualizer = document.getElementById('visualizer');
+    const voiceSelect = document.getElementById('voiceSelect');
+
+    let ws = null;
+    let audioContext = null;
+    let mediaStream = null;
+    let processor = null;
+    let isListening = false;
+
+    // Audio queue for sequential playback
+    let audioQueue = [];
+    let isPlayingAudio = false;
+
+    // Settings
+    let currentVoice = 'alloy';
+
+    // Create visualizer bars
+    for (let i = 0; i < 24; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'visualizer-bar';
+      bar.style.height = '6px';
+      visualizer.appendChild(bar);
+    }
+    const bars = visualizer.querySelectorAll('.visualizer-bar');
+
+    function setStatus(status, text) {
+      statusIndicator.className = 'status-indicator ' + status;
+      statusText.textContent = text;
+
+      // Update header badge
+      if (status === 'connected' || status === 'listening' || status === 'speaking') {
+        connectionBadge.className = 'badge bg-success';
+        connectionBadge.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i>Connected';
+      } else {
+        connectionBadge.className = 'badge bg-secondary';
+        connectionBadge.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i>Disconnected';
+      }
+    }
+
+    function addMessage(text, role) {
+      const div = document.createElement('div');
+      div.className = 'message ' + role;
+      div.textContent = text;
+      transcript.appendChild(div);
+      transcript.scrollTop = transcript.scrollHeight;
+    }
+
+    function setVoice(voice) {
+      currentVoice = voice;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'set_voice', voice: voice }));
+      }
+    }
+
+    async function connect() {
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioContext = new AudioContext({ sampleRate: 24000 });
+
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume();
+        }
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        ws = new WebSocket(protocol + '//' + window.location.host + basePath + '/ws/voice');
+
+        ws.onopen = function() {
+          console.log('WebSocket connected');
+          setStatus('connected', 'Connected - Tap mic to speak');
+          micButton.disabled = false;
+          textInput.disabled = false;
+          sendButton.disabled = false;
+          endButton.disabled = false;
+          connectButton.innerHTML = '<i class="bi bi-check-circle me-2"></i>Connected';
+          connectButton.className = 'btn btn-outline-success btn-lg me-2';
+          connectButton.disabled = true;
+
+          // Send initial config
+          ws.send(JSON.stringify({ type: 'init', voice: currentVoice }));
+        };
+
+        ws.onmessage = function(event) {
+          var data = JSON.parse(event.data);
+          console.log('Received:', data.type);
+
+          switch (data.type) {
+            case 'ready':
+              addMessage("I'm ready to help you practice your sales skills. What would you like to work on?", 'assistant');
+              break;
+
+            case 'audio':
+              if (isListening) stopListening();
+              setStatus('speaking', 'Speaking...');
+              queueAudio(data.audio);
+              break;
+
+            case 'assistant_transcript':
+              addMessage(data.text, 'assistant');
+              break;
+
+            case 'user_transcript':
+              addMessage(data.text, 'user');
+              break;
+
+            case 'error':
+              console.error('Error:', data.message);
+              addMessage('Sorry, I had trouble with that. Could you try again?', 'assistant');
+              break;
+          }
+        };
+
+        ws.onclose = function() { disconnect(); };
+        ws.onerror = function(err) {
+          console.error('WebSocket error:', err);
+          disconnect();
+        };
+
+      } catch (err) {
+        console.error('Connection error:', err);
+        alert('Could not connect. Please make sure microphone access is allowed.');
+      }
+    }
+
+    function disconnect() {
+      if (ws) { ws.close(); ws = null; }
+      if (mediaStream) { mediaStream.getTracks().forEach(function(t) { t.stop(); }); mediaStream = null; }
+      if (audioContext) { audioContext.close(); audioContext = null; }
+      if (processor) { processor.disconnect(); processor = null; }
+
+      isListening = false;
+      isPlayingAudio = false;
+      audioQueue = [];
+      micButton.disabled = true;
+      micButton.classList.remove('active');
+      textInput.disabled = true;
+      sendButton.disabled = true;
+      endButton.disabled = true;
+      setStatus('disconnected', 'Disconnected');
+      connectButton.innerHTML = '<i class="bi bi-power me-2"></i>Connect';
+      connectButton.className = 'btn btn-warning btn-lg me-2';
+      connectButton.disabled = false;
+    }
+
+    function startListening() {
+      if (!audioContext || !mediaStream || !ws) return;
+
+      isListening = true;
+      micButton.classList.add('active');
+      setStatus('listening', 'Listening...');
+
+      // Notify server we're starting to speak
+      ws.send(JSON.stringify({ type: 'start_listening' }));
+
+      var source = audioContext.createMediaStreamSource(mediaStream);
+      processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+      processor.onaudioprocess = function(e) {
+        if (!isListening || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+        var inputData = e.inputBuffer.getChannelData(0);
+
+        // Update visualizer
+        var sum = 0;
+        for (var i = 0; i < inputData.length; i++) sum += Math.abs(inputData[i]);
+        var avg = sum / inputData.length;
+        bars.forEach(function(bar) {
+          bar.style.height = Math.min(80, Math.max(6, avg * 600 * (1 + Math.random() * 0.5))) + 'px';
+        });
+
+        // Send audio
+        var pcm16 = floatTo16BitPCM(inputData);
+        var base64 = arrayBufferToBase64(pcm16.buffer);
+        ws.send(JSON.stringify({ type: 'audio', audio: base64 }));
+      };
+
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+    }
+
+    function stopListening() {
+      isListening = false;
+      micButton.classList.remove('active');
+      if (processor) { processor.disconnect(); processor = null; }
+      bars.forEach(function(bar) { bar.style.height = '6px'; });
+      if (!isPlayingAudio) setStatus('connected', 'Connected - Tap mic to speak');
+
+      // Notify server we stopped speaking
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'stop_listening' }));
+      }
+    }
+
+    function floatTo16BitPCM(float32Array) {
+      var buffer = new Int16Array(float32Array.length);
+      for (var i = 0; i < float32Array.length; i++) {
+        var s = Math.max(-1, Math.min(1, float32Array[i]));
+        buffer[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      return buffer;
+    }
+
+    function arrayBufferToBase64(buffer) {
+      var binary = '';
+      var bytes = new Uint8Array(buffer);
+      for (var i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
+
+    function queueAudio(base64Audio) {
+      var binaryString = atob(base64Audio);
+      var bytes = new Uint8Array(binaryString.length);
+      for (var i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      var int16Array = new Int16Array(bytes.buffer);
+      var float32Array = new Float32Array(int16Array.length);
+      for (var i = 0; i < int16Array.length; i++) {
+        float32Array[i] = int16Array[i] / 32768.0;
+      }
+
+      audioQueue.push(float32Array);
+      if (!isPlayingAudio) playNextAudio();
+    }
+
+    function playNextAudio() {
+      if (audioQueue.length === 0) {
+        isPlayingAudio = false;
+        setStatus('connected', 'Connected - Tap mic to speak');
+        return;
+      }
+
+      isPlayingAudio = true;
+      var audioData = audioQueue.shift();
+
+      var audioBuffer = audioContext.createBuffer(1, audioData.length, 24000);
+      audioBuffer.copyToChannel(audioData, 0);
+
+      var source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContext.destination);
+      source.onended = playNextAudio;
+      source.start();
+    }
+
+    function sendText() {
+      var text = textInput.value.trim();
+      if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+      addMessage(text, 'user');
+      ws.send(JSON.stringify({ type: 'text', text: text }));
+      textInput.value = '';
+    }
+
+    function sendQuickCommand(text) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        alert('Please connect first by tapping the Connect button.');
+        return;
+      }
+      addMessage(text, 'user');
+      ws.send(JSON.stringify({ type: 'text', text: text }));
+    }
+
+    // Event listeners
+    connectButton.addEventListener('click', function() {
+      if (!ws) connect();
+    });
+
+    micButton.addEventListener('click', function() {
+      if (isListening) stopListening();
+      else startListening();
+    });
+
+    sendButton.addEventListener('click', sendText);
+    textInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') sendText();
+    });
+
+    endButton.addEventListener('click', disconnect);
+
+    voiceSelect.addEventListener('change', function() {
+      setVoice(this.value);
+    });
+
+    // Quick command buttons
+    document.getElementById('quickCmd1').addEventListener('click', function() {
+      sendQuickCommand('How do I handle objections from customers?');
+    });
+    document.getElementById('quickCmd2').addEventListener('click', function() {
+      sendQuickCommand('Give me some discovery questions to ask prospects');
+    });
+    document.getElementById('quickCmd3').addEventListener('click', function() {
+      sendQuickCommand('Help me close this deal with a hesitant customer');
+    });
+    document.getElementById('quickCmd4').addEventListener('click', function() {
+      sendQuickCommand('Start a roleplay scenario where I practice selling');
+    });
+
+    setStatus('disconnected', 'Tap Connect to start');
+  </script>
+</body>
+</html>

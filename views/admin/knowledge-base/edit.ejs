@@ -1,0 +1,178 @@
+<%- include('../../layouts/admin', { body: `
+
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+          <li class="breadcrumb-item"><a href="${basePath}/admin/knowledge-base?token=${token || ''}">Knowledge Base</a></li>
+          <li class="breadcrumb-item active">Edit Article</li>
+        </ol>
+      </nav>
+      <h1 class="h3 mb-0"><i class="bi bi-pencil me-2"></i>Edit Article</h1>
+    </div>
+    <a href="${basePath}/admin/knowledge-base?token=${token || ''}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Back to List
+    </a>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <form id="editForm">
+            <div class="row g-3">
+              <div class="col-md-8">
+                <label class="form-label">Title <span class="text-danger">*</span></label>
+                <input type="text" name="title" class="form-control" required
+                  value="${article?.title || ''}" placeholder="Article title">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Category</label>
+                <input type="text" name="category" class="form-control"
+                  list="categoryList" value="${article?.category || 'general'}" placeholder="e.g., products">
+                <datalist id="categoryList">
+                  ${(categories || ['general', 'products', 'faq', 'policies', 'procedures']).map(c =>
+                    '<option value="' + c + '">'
+                  ).join('')}
+                </datalist>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Content <span class="text-danger">*</span></label>
+                <textarea name="content" class="form-control" rows="15" required
+                  placeholder="Article content...">${article?.content || ''}</textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Tags (comma-separated)</label>
+                <input type="text" name="tagsInput" class="form-control"
+                  value="${(article?.tags || []).join(', ')}" placeholder="e.g., pricing, features">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Sort Order</label>
+                <input type="number" name="sortOrder" class="form-control"
+                  value="${article?.sortOrder || 0}">
+              </div>
+              <div class="col-md-3 d-flex align-items-end">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" name="isActive" id="isActive"
+                    ${article?.isActive !== false ? 'checked' : ''}>
+                  <label class="form-check-label" for="isActive">Active</label>
+                </div>
+              </div>
+            </div>
+
+            <hr>
+
+            <div class="d-flex justify-content-between">
+              <button type="button" class="btn btn-outline-danger" onclick="deleteArticle()">
+                <i class="bi bi-trash me-1"></i> Delete
+              </button>
+              <div>
+                <a href="${basePath}/admin/knowledge-base?token=${token || ''}" class="btn btn-secondary me-2">
+                  Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-save me-1"></i> Save Changes
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Article Info</h5>
+        </div>
+        <div class="card-body">
+          <dl class="mb-0">
+            <dt class="text-muted small">ID</dt>
+            <dd><code>${article?.id || ''}</code></dd>
+            <dt class="text-muted small">Created</dt>
+            <dd>${article?.createdAt ? new Date(article.createdAt).toLocaleString() : '-'}</dd>
+            <dt class="text-muted small">Last Updated</dt>
+            <dd>${article?.updatedAt ? new Date(article.updatedAt).toLocaleString() : '-'}</dd>
+            <dt class="text-muted small">Status</dt>
+            <dd>
+              <span class="badge ${article?.isActive !== false ? 'bg-success' : 'bg-warning'}">
+                ${article?.isActive !== false ? 'Active' : 'Inactive'}
+              </span>
+            </dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-lightbulb me-2"></i>Tips</h5>
+        </div>
+        <div class="card-body">
+          <ul class="small text-muted mb-0">
+            <li>Use descriptive titles for better AI matching</li>
+            <li>Include relevant keywords in content</li>
+            <li>Organize articles by category</li>
+            <li>Use tags for fine-grained filtering</li>
+            <li>Set sort order to control display priority</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const basePath = '${basePath}';
+const articleId = '${article?.id || ''}';
+
+document.getElementById('editForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData(e.target);
+  const data = {
+    title: formData.get('title'),
+    content: formData.get('content'),
+    category: formData.get('category') || 'general',
+    tags: JSON.stringify((formData.get('tagsInput') || '').split(',').map(t => t.trim()).filter(t => t)),
+    sortOrder: formData.get('sortOrder') || '0',
+    isActive: document.getElementById('isActive').checked
+  };
+
+  try {
+    const response = await fetch(basePath + '/admin/knowledge-base/' + articleId, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      const result = await response.json();
+      throw new Error(result.error || 'Failed to save');
+    }
+
+    window.location.href = basePath + '/admin/knowledge-base?token=${token || ''}';
+  } catch (error) {
+    alert('Error: ' + error.message);
+  }
+});
+
+async function deleteArticle() {
+  if (!confirm('Are you sure you want to delete this article? This cannot be undone.')) return;
+
+  try {
+    const response = await fetch(basePath + '/admin/knowledge-base/' + articleId, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) throw new Error('Failed to delete');
+
+    window.location.href = basePath + '/admin/knowledge-base?token=${token || ''}';
+  } catch (error) {
+    alert('Error: ' + error.message);
+  }
+}
+</script>
+
+\` }) %>

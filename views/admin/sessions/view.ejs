@@ -1,0 +1,157 @@
+<%- include('../../layouts/admin', { title, user }) %>
+
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+          <li class="breadcrumb-item"><a href="/admin/sessions">Sessions</a></li>
+          <li class="breadcrumb-item active">Session Details</li>
+        </ol>
+      </nav>
+      <h1 class="h3 mb-0">
+        <i class="bi bi-chat-dots me-2"></i>
+        Session: <%= session.user.firstName %> <%= session.user.lastName %>
+      </h1>
+    </div>
+    <div>
+      <a href="/admin/sessions" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back to Sessions
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Session Info -->
+    <div class="col-lg-4">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Session Information</h5>
+        </div>
+        <div class="card-body">
+          <dl class="mb-0">
+            <dt>User</dt>
+            <dd><%= session.user.firstName %> <%= session.user.lastName %><br><small class="text-muted"><%= session.user.email %></small></dd>
+
+            <dt>Status</dt>
+            <dd>
+              <% if (session.status === 'completed') { %>
+                <span class="badge bg-success">Completed</span>
+              <% } else if (session.status === 'active') { %>
+                <span class="badge bg-primary">Active</span>
+              <% } else { %>
+                <span class="badge bg-secondary"><%= session.status %></span>
+              <% } %>
+            </dd>
+
+            <% if (session.product) { %>
+              <dt>Product</dt>
+              <dd><%= session.product.name %></dd>
+            <% } %>
+
+            <% if (session.scenario) { %>
+              <dt>Scenario</dt>
+              <dd><%= session.scenario.name %></dd>
+            <% } %>
+
+            <dt>Started</dt>
+            <dd><%= new Date(session.startedAt).toLocaleString() %></dd>
+
+            <% if (session.endedAt) { %>
+              <dt>Ended</dt>
+              <dd><%= new Date(session.endedAt).toLocaleString() %></dd>
+            <% } %>
+
+            <dt>Duration</dt>
+            <dd>
+              <% if (session.durationSeconds) { %>
+                <%= Math.floor(session.durationSeconds / 60) %>m <%= session.durationSeconds % 60 %>s
+              <% } else { %>
+                <span class="text-muted">-</span>
+              <% } %>
+            </dd>
+
+            <% if (session.overallScore) { %>
+              <dt>Score</dt>
+              <dd>
+                <div class="progress" style="height: 20px;">
+                  <div class="progress-bar <%= session.overallScore >= 80 ? 'bg-success' : session.overallScore >= 60 ? 'bg-warning' : 'bg-danger' %>"
+                       style="width: <%= session.overallScore %>%">
+                    <%= session.overallScore %>%
+                  </div>
+                </div>
+              </dd>
+            <% } %>
+          </dl>
+        </div>
+      </div>
+
+      <!-- Feedback Summary -->
+      <% if (session.feedbackEntries && session.feedbackEntries.length > 0) { %>
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Feedback Summary</h5>
+          </div>
+          <div class="card-body">
+            <% session.feedbackEntries.forEach(fb => { %>
+              <div class="mb-3 pb-3 border-bottom">
+                <div class="d-flex justify-content-between">
+                  <span class="badge bg-secondary"><%= fb.type %></span>
+                  <% if (fb.score) { %>
+                    <span class="badge bg-primary"><%= fb.score %>%</span>
+                  <% } %>
+                </div>
+                <p class="mb-0 mt-2 small"><%= fb.content %></p>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Conversation -->
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-chat-text me-2"></i>Conversation
+          </h5>
+          <span class="badge bg-secondary"><%= session.messages ? session.messages.length : 0 %> messages</span>
+        </div>
+        <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+          <% if (session.messages && session.messages.length > 0) { %>
+            <% session.messages.forEach(msg => { %>
+              <div class="d-flex mb-3 <%= msg.role === 'user' ? 'justify-content-end' : '' %>">
+                <div class="card <%= msg.role === 'user' ? 'bg-primary text-white' : 'bg-light' %>" style="max-width: 75%;">
+                  <div class="card-body py-2 px-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <strong class="small">
+                        <% if (msg.role === 'user') { %>
+                          <i class="bi bi-person me-1"></i>User
+                        <% } else if (msg.role === 'assistant') { %>
+                          <i class="bi bi-robot me-1"></i>AI
+                        <% } else { %>
+                          <i class="bi bi-gear me-1"></i>System
+                        <% } %>
+                      </strong>
+                      <small class="<%= msg.role === 'user' ? 'text-white-50' : 'text-muted' %>">
+                        <%= new Date(msg.timestamp).toLocaleTimeString() %>
+                      </small>
+                    </div>
+                    <p class="mb-0"><%= msg.content %></p>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div class="text-center py-5 text-muted">
+              <i class="bi bi-chat-dots fs-1 d-block mb-2"></i>
+              No messages in this session
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

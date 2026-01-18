@@ -1,0 +1,347 @@
+<%- include('../../layouts/admin', { body: `
+
+<style>
+  .closing-card { transition: all 0.2s; }
+  .closing-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  .type-assumptive { background: linear-gradient(135deg, #198754, #157347); color: white; }
+  .type-choice { background: linear-gradient(135deg, #0d6efd, #0a58ca); color: white; }
+  .type-summary { background: linear-gradient(135deg, #6f42c1, #5a32a3); color: white; }
+  .type-urgency { background: linear-gradient(135deg, #ffc107, #e0a800); color: #212529; }
+  .type-trial { background: linear-gradient(135deg, #20c997, #1aa179); color: white; }
+  .type-question { background: linear-gradient(135deg, #0dcaf0, #0aa2c0); color: white; }
+  .type-emotional { background: linear-gradient(135deg, #dc3545, #bb2d3b); color: white; }
+  .type-general { background: linear-gradient(135deg, #6c757d, #5c636a); color: white; }
+  blockquote { border-left: 4px solid #0d6efd; padding-left: 15px; background: #f8f9fa; padding: 12px 15px; margin: 0; font-style: italic; border-radius: 4px; }
+</style>
+
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-check-circle text-primary me-2"></i>Closing Strategies</h1>
+      <p class="text-muted mb-0">These are the strategies used to close the sale. Different closes work in different situations.</p>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addClosingModal">
+      <i class="bi bi-plus-lg me-1"></i> Add Strategy
+    </button>
+  </div>
+
+  <!-- Company Info (for non-super-admin) -->
+  ${typeof tenant !== 'undefined' && tenant && !isSuperAdmin ? '<div class="alert alert-info mb-4"><i class="bi bi-building me-2"></i>Viewing data for: <strong>' + tenant.name + '</strong></div>' : ''}
+
+  <!-- Filters (SUPER_ADMIN only) -->
+  ${isSuperAdmin ? '<div class="card mb-4"><div class="card-body"><form method="GET" id="filterForm" class="row g-3"><input type="hidden" name="token" value="' + (token || '') + '"><div class="col-md-3"><label class="form-label">Industry</label><select name="industryId" id="industryFilter" class="form-select" onchange="onIndustryChange()"><option value="">All Industries</option></select></div><div class="col-md-3"><label class="form-label">Company</label><select name="companyId" id="companyFilter" class="form-select"><option value="">All Companies</option></select></div><div class="col-md-3"><label class="form-label">Type</label><select name="type" id="typeFilter" class="form-select"><option value="">All Types</option></select></div><div class="col-md-3 d-flex align-items-end"><button type="submit" class="btn btn-primary me-2"><i class="bi bi-funnel me-1"></i> Filter</button><a href="' + basePath + '/admin/closings?token=' + (token || '') + '" class="btn btn-outline-secondary">Clear</a></div></form></div></div>' : ''}
+
+  <!-- Closings List -->
+  <div id="closingsList" class="row"></div>
+
+  <!-- Closing Types Explained -->
+  <div class="card mt-4">
+    <div class="card-header bg-light">
+      <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Closing Types Explained</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <h6><span class="badge bg-success">Assumptive</span></h6>
+          <p class="small text-muted mb-0">Assumes the sale and moves to details. "Would you prefer black or silver?"</p>
+        </div>
+        <div class="col-md-4 mb-3">
+          <h6><span class="badge bg-primary">Choice</span></h6>
+          <p class="small text-muted mb-0">Gives options that both lead to a sale. "Would you like the 6-month or annual plan?"</p>
+        </div>
+        <div class="col-md-4 mb-3">
+          <h6><span class="badge" style="background: #6f42c1;">Summary</span></h6>
+          <p class="small text-muted mb-0">Recaps benefits before asking for the close. "So we've covered A, B, and C..."</p>
+        </div>
+        <div class="col-md-4 mb-3">
+          <h6><span class="badge bg-warning text-dark">Urgency</span></h6>
+          <p class="small text-muted mb-0">Creates time pressure. "Only a few left at this price." Use ethically.</p>
+        </div>
+        <div class="col-md-4 mb-3">
+          <h6><span class="badge" style="background: #20c997;">Trial</span></h6>
+          <p class="small text-muted mb-0">Offers a low-risk way to try. "Let's start with a 30-day pilot."</p>
+        </div>
+        <div class="col-md-4 mb-3">
+          <h6><span class="badge bg-info">Question</span></h6>
+          <p class="small text-muted mb-0">Uses questions to gauge readiness. "How does that sound to you?"</p>
+        </div>
+        <div class="col-md-4 mb-3">
+          <h6><span class="badge bg-danger">Emotional</span></h6>
+          <p class="small text-muted mb-0">Connects to feelings and outcomes. "Imagine how you'll feel when..."</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Closing Modal -->
+<div class="modal fade" id="addClosingModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-lg me-2"></i>Add Closing Strategy</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="addClosingForm">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Name *</label>
+              <input type="text" name="name" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Type</label>
+              <select name="type" class="form-control">
+                <option value="assumptive">Assumptive</option>
+                <option value="choice">Choice</option>
+                <option value="summary">Summary</option>
+                <option value="urgency">Urgency</option>
+                <option value="trial">Trial</option>
+                <option value="question">Question</option>
+                <option value="emotional">Emotional</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Script *</label>
+              <textarea name="script" class="form-control" rows="3" required placeholder="The closing words to use..."></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Use When</label>
+              <input type="text" name="useWhen" class="form-control" placeholder="Describe when this close works best...">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Closing Modal -->
+<div class="modal fade" id="editClosingModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Closing Strategy</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="editClosingForm">
+        <input type="hidden" name="id" id="editClosingId">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Name *</label>
+              <input type="text" name="name" id="editName" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Type</label>
+              <select name="type" id="editType" class="form-control">
+                <option value="assumptive">Assumptive</option>
+                <option value="choice">Choice</option>
+                <option value="summary">Summary</option>
+                <option value="urgency">Urgency</option>
+                <option value="trial">Trial</option>
+                <option value="question">Question</option>
+                <option value="emotional">Emotional</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Script *</label>
+              <textarea name="script" id="editScript" class="form-control" rows="3" required></textarea>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Use When</label>
+              <input type="text" name="useWhen" id="editUseWhen" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <div class="form-check mt-4">
+                <input type="checkbox" name="isActive" class="form-check-input" id="editIsActive">
+                <label class="form-check-label" for="editIsActive">Active</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const closings = ${JSON.stringify(closings)};
+  const basePath = '${basePath}';
+  const industries = ${JSON.stringify(industries)};
+  const companies = ${JSON.stringify(companies)};
+  const filters = ${JSON.stringify(filters)};
+  const isSuperAdmin = ${isSuperAdmin};
+  const types = ${JSON.stringify(types)};
+
+  // Initialize filter dropdowns for SUPER_ADMIN
+  function initFilters() {
+    if (!isSuperAdmin) return;
+
+    const industrySelect = document.getElementById('industryFilter');
+    const companySelect = document.getElementById('companyFilter');
+    const typeSelect = document.getElementById('typeFilter');
+
+    // Populate industries
+    industries.forEach(ind => {
+      const opt = document.createElement('option');
+      opt.value = ind.id;
+      opt.textContent = ind.name;
+      if (filters.industryId === ind.id) opt.selected = true;
+      industrySelect.appendChild(opt);
+    });
+
+    // Populate companies
+    updateCompanyDropdown();
+
+    // Populate types
+    types.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t.charAt(0).toUpperCase() + t.slice(1);
+      if (filters.type === t) opt.selected = true;
+      typeSelect.appendChild(opt);
+    });
+  }
+
+  function updateCompanyDropdown() {
+    const industrySelect = document.getElementById('industryFilter');
+    const companySelect = document.getElementById('companyFilter');
+    const selectedIndustry = industrySelect ? industrySelect.value : '';
+
+    companySelect.innerHTML = '<option value="">All Companies</option>';
+
+    const filteredCompanies = selectedIndustry
+      ? companies.filter(c => c.industryId === selectedIndustry)
+      : companies;
+
+    filteredCompanies.forEach(comp => {
+      const opt = document.createElement('option');
+      opt.value = comp.id;
+      opt.textContent = comp.name + (comp.industry ? ' (' + comp.industry.name + ')' : '');
+      if (filters.companyId === comp.id) opt.selected = true;
+      companySelect.appendChild(opt);
+    });
+  }
+
+  function onIndustryChange() {
+    updateCompanyDropdown();
+  }
+
+  function renderClosings() {
+    const container = document.getElementById('closingsList');
+
+    if (closings.length === 0) {
+      container.innerHTML = '<div class="col-12"><div class="card"><div class="card-body text-center py-5 text-muted"><i class="bi bi-check-circle fs-1 d-block mb-2"></i>No closing strategies found. Add your first strategy to get started.</div></div></div>';
+      return;
+    }
+
+    let html = '';
+    closings.forEach(closing => {
+      const typeName = closing.type ? closing.type.charAt(0).toUpperCase() + closing.type.slice(1) : 'General';
+      const statusBadge = closing.isActive ? 'bg-success' : 'bg-secondary';
+      const statusText = closing.isActive ? 'Active' : 'Inactive';
+
+      html += '<div class="col-md-6 mb-4">';
+      html += '<div class="card h-100 closing-card">';
+      html += '<div class="card-header type-' + (closing.type || 'general') + ' d-flex justify-content-between align-items-center">';
+      html += '<h5 class="card-title mb-0">' + closing.name + '</h5>';
+      html += '<span class="badge bg-light text-dark">' + typeName + '</span>';
+      html += '</div>';
+      html += '<div class="card-body">';
+      html += '<p class="mb-2"><strong>Script:</strong></p>';
+      html += '<blockquote>' + closing.script + '</blockquote>';
+      if (closing.useWhen) {
+        html += '<p class="mt-3 mb-0"><strong>Use when:</strong> ' + closing.useWhen + '</p>';
+      }
+      html += '</div>';
+      html += '<div class="card-footer d-flex justify-content-between align-items-center">';
+      html += '<span class="badge ' + statusBadge + '">' + statusText + '</span>';
+      html += '<div>';
+      html += '<button class="btn btn-sm btn-outline-secondary me-1" onclick="editClosing(\\'' + closing.id + '\\')"><i class="bi bi-pencil"></i></button>';
+      html += '<button class="btn btn-sm btn-outline-danger" onclick="deleteClosing(\\'' + closing.id + '\\')"><i class="bi bi-trash"></i></button>';
+      html += '</div>';
+      html += '</div>';
+      html += '</div></div>';
+    });
+
+    container.innerHTML = html;
+  }
+
+  function editClosing(id) {
+    const closing = closings.find(c => c.id === id);
+    if (!closing) return;
+
+    document.getElementById('editClosingId').value = closing.id;
+    document.getElementById('editName').value = closing.name || '';
+    document.getElementById('editType').value = closing.type || 'assumptive';
+    document.getElementById('editScript').value = closing.script || '';
+    document.getElementById('editUseWhen').value = closing.useWhen || '';
+    document.getElementById('editIsActive').checked = closing.isActive;
+
+    new bootstrap.Modal(document.getElementById('editClosingModal')).show();
+  }
+
+  document.getElementById('addClosingForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+    try {
+      const res = await fetch(basePath + '/admin/closings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) location.reload();
+      else alert((await res.json()).error || 'Failed to create closing strategy');
+    } catch (err) {
+      alert('Error creating closing strategy');
+    }
+  });
+
+  document.getElementById('editClosingForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const id = document.getElementById('editClosingId').value;
+    const data = Object.fromEntries(new FormData(form));
+    data.isActive = form.isActive.checked;
+
+    try {
+      const res = await fetch(basePath + '/admin/closings/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) location.reload();
+      else alert((await res.json()).error || 'Failed to update closing strategy');
+    } catch (err) {
+      alert('Error updating closing strategy');
+    }
+  });
+
+  async function deleteClosing(id) {
+    if (!confirm('Delete this closing strategy?')) return;
+    try {
+      const res = await fetch(basePath + '/admin/closings/' + id, { method: 'DELETE' });
+      if (res.ok) location.reload();
+      else alert('Failed to delete closing strategy');
+    } catch (err) {
+      alert('Error deleting closing strategy');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initFilters();
+    renderClosings();
+  });
+</script>
+
+` }) %>

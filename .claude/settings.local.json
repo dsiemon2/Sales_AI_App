@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(findstr:*)",
+      "Bash(dir /s /b \"C:\\\\Users\\\\dsiem\\\\Downloads\\\\AI Digital Assistants\\\\Sales_AI\\\\Sales_AI_App\\\\*.md\")",
+      "Bash(docker compose:*)",
+      "Bash(curl:*)",
+      "Bash(find:*)",
+      "Bash(dir:*)",
+      "Bash(ls:*)",
+      "Bash(npm install)",
+      "Bash(timeout:*)",
+      "Bash(Start-Sleep -Seconds 15)",
+      "Bash(npm install:*)",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 30; curl -s http://localhost:8090/ApexSales/health\")",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 30; Invoke-WebRequest -Uri ''http://localhost:8090/ApexSales/health'' -UseBasicParsing | Select-Object -ExpandProperty Content\")",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 15; Invoke-WebRequest -Uri ''http://localhost:8090/ApexSales/health'' -UseBasicParsing | Select-Object -ExpandProperty Content\")",
+      "Bash(for page in \"products\" \"users\" \"sessions\" \"techniques\" \"discovery\" \"objections\" \"closings\" \"analytics\" \"ai-config\" \"dtmf-menu\" \"ms-teams\")",
+      "Bash(do echo -n \"$page: \")",
+      "Bash(done)",
+      "Bash(for page in \"payment-configurations\" \"greeting\" \"knowledge-base\" \"sms-settings\" \"webhooks\" \"call-transfer\" \"products\" \"users\")",
+      "Bash(ping:*)",
+      "Bash(php artisan tinker --execute=\"echo json_encode\\(\\\\App\\\\Models\\\\PaymentGateway::where\\(''name'', ''stripe''\\)->first\\(\\)\\);\")",
+      "Bash(\"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root -e \"SELECT name, publishable_key, secret_key FROM voting_new.payment_gateways WHERE name=''stripe'';\")",
+      "Bash(docker exec:*)",
+      "Bash(docker ps:*)",
+      "WebFetch(domain:127.0.0.1)",
+      "Bash(docker logs:*)",
+      "Bash(docker start:*)",
+      "Bash(docker restart:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)",
+      "Bash(start \"\" \"C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe\")",
+      "Bash(start \"\" \"%LOCALAPPDATA%\\\\Docker\\\\Docker Desktop.exe\")",
+      "Bash(docker network:*)",
+      "Bash(docker stop:*)"
+    ]
+  }
+}

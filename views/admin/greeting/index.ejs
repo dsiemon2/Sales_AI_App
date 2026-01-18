@@ -1,0 +1,146 @@
+<%- include('../../layouts/admin', { body: `
+
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-chat-quote me-2"></i>Greeting Configuration</h1>
+      <p class="text-muted mb-0">Configure welcome messages and AI behavior</p>
+    </div>
+  </div>
+
+  ${typeof saved !== 'undefined' || (typeof req !== 'undefined' && req.query?.saved) ? '<div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-2"></i>Settings saved successfully!<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>' : ''}
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-chat-dots me-2"></i>Greeting & Prompts</h5>
+        </div>
+        <div class="card-body">
+          <form id="greetingForm" method="POST" action="${basePath}/admin/greeting">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label fw-semibold">Welcome Greeting <span class="text-danger">*</span></label>
+                <textarea name="greeting" class="form-control" rows="4" required
+                  placeholder="Hi! I'm your AI sales coach. I'm here to help you practice your sales conversations...">${aiConfig?.greeting || ''}</textarea>
+                <small class="text-muted">The first message users hear/see when starting a training session.</small>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-semibold">System Prompt</label>
+                <textarea name="systemPrompt" class="form-control" rows="6"
+                  placeholder="You are a professional sales training coach. Help the trainee practice sales conversations...">${aiConfig?.systemPrompt || ''}</textarea>
+                <small class="text-muted">Instructions that guide the AI's behavior. Include persona, rules, and context.</small>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Voice</label>
+                <select name="voiceId" class="form-select">
+                  <option value="alloy" ${aiConfig?.voiceId === 'alloy' ? 'selected' : ''}>Alloy (Neutral)</option>
+                  <option value="echo" ${aiConfig?.voiceId === 'echo' ? 'selected' : ''}>Echo (Male)</option>
+                  <option value="fable" ${aiConfig?.voiceId === 'fable' ? 'selected' : ''}>Fable (Expressive)</option>
+                  <option value="onyx" ${aiConfig?.voiceId === 'onyx' ? 'selected' : ''}>Onyx (Deep Male)</option>
+                  <option value="nova" ${aiConfig?.voiceId === 'nova' ? 'selected' : ''}>Nova (Female)</option>
+                  <option value="shimmer" ${aiConfig?.voiceId === 'shimmer' ? 'selected' : ''}>Shimmer (Soft Female)</option>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Language</label>
+                <select name="language" class="form-select">
+                  <option value="en" ${aiConfig?.language === 'en' ? 'selected' : ''}>English</option>
+                  <option value="es" ${aiConfig?.language === 'es' ? 'selected' : ''}>Spanish</option>
+                  <option value="fr" ${aiConfig?.language === 'fr' ? 'selected' : ''}>French</option>
+                  <option value="de" ${aiConfig?.language === 'de' ? 'selected' : ''}>German</option>
+                  <option value="pt" ${aiConfig?.language === 'pt' ? 'selected' : ''}>Portuguese</option>
+                  <option value="it" ${aiConfig?.language === 'it' ? 'selected' : ''}>Italian</option>
+                  <option value="zh" ${aiConfig?.language === 'zh' ? 'selected' : ''}>Chinese</option>
+                  <option value="ja" ${aiConfig?.language === 'ja' ? 'selected' : ''}>Japanese</option>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Response Style</label>
+                <select name="responseStyle" class="form-select">
+                  <option value="professional" ${aiConfig?.responseStyle === 'professional' ? 'selected' : ''}>Professional</option>
+                  <option value="friendly" ${aiConfig?.responseStyle === 'friendly' ? 'selected' : ''}>Friendly</option>
+                  <option value="casual" ${aiConfig?.responseStyle === 'casual' ? 'selected' : ''}>Casual</option>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Verbosity</label>
+                <select name="verbosity" class="form-select">
+                  <option value="concise" ${aiConfig?.verbosity === 'concise' ? 'selected' : ''}>Concise</option>
+                  <option value="balanced" ${aiConfig?.verbosity === 'balanced' ? 'selected' : ''}>Balanced</option>
+                  <option value="detailed" ${aiConfig?.verbosity === 'detailed' ? 'selected' : ''}>Detailed</option>
+                </select>
+              </div>
+
+              <div class="col-12">
+                <hr>
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-save me-1"></i> Save Configuration
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-lightbulb me-2"></i>Tips</h5>
+        </div>
+        <div class="card-body">
+          <h6 class="text-primary">Greeting Best Practices:</h6>
+          <ul class="small text-muted">
+            <li>Keep it warm and welcoming</li>
+            <li>Introduce the AI persona</li>
+            <li>Set expectations for the session</li>
+            <li>Mention available help/commands</li>
+          </ul>
+
+          <h6 class="text-primary mt-3">System Prompt Tips:</h6>
+          <ul class="small text-muted mb-0">
+            <li>Define the AI's role clearly</li>
+            <li>Include industry-specific context</li>
+            <li>Set boundaries for responses</li>
+            <li>Specify feedback style preferences</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-volume-up me-2"></i>Voice Preview</h5>
+        </div>
+        <div class="card-body text-center">
+          <p class="small text-muted mb-3">Test how your greeting will sound:</p>
+          <button type="button" class="btn btn-outline-primary" onclick="previewVoice()">
+            <i class="bi bi-play-fill me-1"></i> Preview Greeting
+          </button>
+          <p class="small text-muted mt-2 mb-0">
+            <i class="bi bi-info-circle me-1"></i>Requires OpenAI API key configured
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function previewVoice() {
+  const greeting = document.querySelector('textarea[name="greeting"]').value;
+  if (!greeting) {
+    alert('Please enter a greeting message first.');
+    return;
+  }
+  // Voice preview would require OpenAI TTS API integration
+  alert('Voice preview requires OpenAI API integration. The greeting would be: "' + greeting.substring(0, 100) + '..."');
+}
+</script>
+
+` }) %>

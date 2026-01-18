@@ -1,0 +1,211 @@
+<%- include('../../layouts/admin', { body: `
+
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-graph-up me-2"></i>Analytics</h1>
+      <p class="text-muted mb-0">Training performance and insights</p>
+    </div>
+    <div class="d-flex gap-2">
+      <select id="daysFilter" class="form-select form-select-sm" style="width: auto;" onchange="changeDays()">
+        <option value="7" ${days === 7 ? 'selected' : ''}>Last 7 days</option>
+        <option value="30" ${days === 30 ? 'selected' : ''}>Last 30 days</option>
+        <option value="90" ${days === 90 ? 'selected' : ''}>Last 90 days</option>
+      </select>
+      <a href="${basePath}/admin/analytics/api/export?format=csv&days=${days}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-download me-1"></i> Export CSV
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row mb-4">
+    <div class="col-md-4 col-lg-2 mb-3">
+      <div class="card h-100 border-primary">
+        <div class="card-body text-center">
+          <i class="bi bi-chat-dots fs-2 text-primary"></i>
+          <h3 class="mt-2 mb-0">${stats.totalSessions}</h3>
+          <small class="text-muted">Total Sessions</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 col-lg-2 mb-3">
+      <div class="card h-100 border-success">
+        <div class="card-body text-center">
+          <i class="bi bi-check-circle fs-2 text-success"></i>
+          <h3 class="mt-2 mb-0">${stats.completedSessions}</h3>
+          <small class="text-muted">Completed</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 col-lg-2 mb-3">
+      <div class="card h-100 border-info">
+        <div class="card-body text-center">
+          <i class="bi bi-percent fs-2 text-info"></i>
+          <h3 class="mt-2 mb-0">${stats.completionRate}%</h3>
+          <small class="text-muted">Completion Rate</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 col-lg-2 mb-3">
+      <div class="card h-100 border-warning">
+        <div class="card-body text-center">
+          <i class="bi bi-clock fs-2 text-warning"></i>
+          <h3 class="mt-2 mb-0">${Math.floor(stats.avgDuration / 60)}m</h3>
+          <small class="text-muted">Avg Duration</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 col-lg-2 mb-3">
+      <div class="card h-100 border-secondary">
+        <div class="card-body text-center">
+          <i class="bi bi-chat-left-text fs-2 text-secondary"></i>
+          <h3 class="mt-2 mb-0">${stats.totalMessages}</h3>
+          <small class="text-muted">Total Messages</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 col-lg-2 mb-3">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <i class="bi bi-chat-square-dots fs-2"></i>
+          <h3 class="mt-2 mb-0">${stats.avgMessagesPerSession}</h3>
+          <small class="text-muted">Msgs/Session</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Sessions Over Time Chart -->
+    <div class="col-lg-8 mb-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="card-title mb-0"><i class="bi bi-bar-chart me-2"></i>Sessions Over Time</h5>
+        </div>
+        <div class="card-body">
+          <canvas id="sessionsChart" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Users -->
+    <div class="col-lg-4 mb-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="card-title mb-0"><i class="bi bi-trophy me-2"></i>Top Performers</h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
+            ${topUsers.length === 0 ? `
+              <div class="list-group-item text-center text-muted py-4">
+                No data available
+              </div>
+            ` : topUsers.slice(0, 5).map((item, index) => `
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <span class="badge bg-${index === 0 ? 'warning' : index === 1 ? 'secondary' : 'light text-dark'} me-2">
+                    #${index + 1}
+                  </span>
+                  ${item.user ? `${item.user.firstName} ${item.user.lastName}` : 'Unknown User'}
+                </div>
+                <span class="badge bg-primary rounded-pill">${item._count} sessions</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product Usage -->
+    <div class="col-lg-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="card-title mb-0"><i class="bi bi-box-seam me-2"></i>Product Usage</h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
+            ${productUsage.length === 0 ? `
+              <div class="list-group-item text-center text-muted py-4">
+                No product data available
+              </div>
+            ` : productUsage.map(item => `
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <span>${item.product ? item.product.name : 'Unknown'}</span>
+                <span class="badge bg-secondary rounded-pill">${item._count} sessions</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Technique Usage -->
+    <div class="col-lg-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="card-title mb-0"><i class="bi bi-lightbulb me-2"></i>Technique Usage</h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
+            ${techniqueUsage.length === 0 ? `
+              <div class="list-group-item text-center text-muted py-4">
+                No technique data available
+              </div>
+            ` : techniqueUsage.map(item => `
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <span>${item.techniqueUsed || 'Unknown'}</span>
+                <span class="badge bg-info rounded-pill">${item._count} uses</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const sessionsData = ${JSON.stringify(sessionsOverTime)};
+  const days = ${days};
+  const basePath = '${basePath}';
+
+  function changeDays() {
+    const newDays = document.getElementById('daysFilter').value;
+    window.location.href = basePath + '/admin/analytics?days=' + newDays;
+  }
+
+  // Sessions over time chart
+  const ctx = document.getElementById('sessionsChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: sessionsData.map(d => new Date(d.date).toLocaleDateString()),
+      datasets: [{
+        label: 'Sessions',
+        data: sessionsData.map(d => Number(d.count)),
+        borderColor: 'rgb(37, 99, 235)',
+        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1 }
+        }
+      }
+    }
+  });
+</script>
+
+` }) %>

@@ -1,0 +1,269 @@
+<%- include('../layouts/public', { body: `
+
+<!-- Demo Hero -->
+<section class="hero-section" style="min-height: 40vh;">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-8 mx-auto text-center">
+        <h1 class="hero-title mb-4">
+          Try <span class="text-warning">Apex Sales Training AI</span>
+        </h1>
+        <p class="hero-subtitle mb-0">
+          Experience AI-powered sales training with our interactive demo. No signup required.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Demo Selection -->
+<section class="py-5">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="fw-bold">Choose a Demo Scenario</h2>
+      <p class="text-muted">Select an industry to experience how the AI adapts to different sales contexts</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+      <div class="col-md-4">
+        <div class="card h-100 cursor-pointer demo-card" onclick="selectDemo('pen')">
+          <div class="card-body text-center p-4">
+            <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+              <i class="bi bi-pen text-primary" style="font-size: 2rem;"></i>
+            </div>
+            <h5 class="fw-bold">Premium Pen Sales</h5>
+            <p class="text-muted small">Classic sales training scenario. Sell executive writing instruments to a discerning buyer.</p>
+            <span class="badge bg-primary">Beginner Friendly</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card h-100 cursor-pointer demo-card" onclick="selectDemo('auto')">
+          <div class="card-body text-center p-4">
+            <div class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+              <i class="bi bi-car-front text-success" style="font-size: 2rem;"></i>
+            </div>
+            <h5 class="fw-bold">Automotive Sales</h5>
+            <p class="text-muted small">Help a customer find their perfect vehicle. Handle trade-ins, financing, and negotiation.</p>
+            <span class="badge bg-warning text-dark">Intermediate</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card h-100 cursor-pointer demo-card" onclick="selectDemo('saas')">
+          <div class="card-body text-center p-4">
+            <div class="rounded-circle bg-info bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+              <i class="bi bi-cloud text-info" style="font-size: 2rem;"></i>
+            </div>
+            <h5 class="fw-bold">SaaS Software Sales</h5>
+            <p class="text-muted small">B2B software sales with enterprise objections, ROI discussions, and multi-stakeholder dynamics.</p>
+            <span class="badge bg-danger">Advanced</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Demo Chat Interface -->
+<section class="py-5 bg-light" id="demoChat" style="display: none;">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="card shadow-lg">
+          <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <div class="rounded-circle bg-white bg-opacity-25 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                <i class="bi bi-robot"></i>
+              </div>
+              <div>
+                <strong id="demoTitle">AI Customer</strong>
+                <div class="small opacity-75" id="demoSubtitle">Skeptical Buyer</div>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-outline-light" onclick="resetDemo()">
+              <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+            </button>
+          </div>
+          <div class="card-body" style="height: 400px; overflow-y: auto;" id="chatMessages">
+            <!-- Messages will appear here -->
+          </div>
+          <div class="card-footer">
+            <form onsubmit="sendDemoMessage(event)" class="d-flex gap-2">
+              <input type="text" class="form-control" id="demoInput" placeholder="Type your response..." autocomplete="off">
+              <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-send"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Demo Tips -->
+        <div class="mt-4">
+          <h6 class="fw-bold"><i class="bi bi-lightbulb me-2"></i>Tips for this scenario:</h6>
+          <ul class="text-muted small" id="demoTips">
+            <li>Start by building rapport and understanding their needs</li>
+            <li>Listen for buying signals and emotional cues</li>
+            <li>Address objections with empathy before reframing</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features Callout -->
+<section class="py-5">
+  <div class="container text-center">
+    <h3 class="fw-bold mb-4">Want the Full Experience?</h3>
+    <p class="text-muted mb-4">
+      The demo shows basic conversation capabilities. Sign up for a free trial to access:
+    </p>
+    <div class="row g-4 justify-content-center mb-4">
+      <div class="col-md-3">
+        <div class="p-3">
+          <i class="bi bi-graph-up text-primary fs-2 mb-2 d-block"></i>
+          <strong>Analytics</strong>
+          <p class="small text-muted mb-0">Track your improvement over time</p>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="p-3">
+          <i class="bi bi-mic text-warning fs-2 mb-2 d-block"></i>
+          <strong>Voice Training</strong>
+          <p class="small text-muted mb-0">Practice speaking, not just typing</p>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="p-3">
+          <i class="bi bi-people text-success fs-2 mb-2 d-block"></i>
+          <strong>Team Features</strong>
+          <p class="small text-muted mb-0">Manage and track your team</p>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="p-3">
+          <i class="bi bi-sliders text-danger fs-2 mb-2 d-block"></i>
+          <strong>Customization</strong>
+          <p class="small text-muted mb-0">Your products, your scripts</p>
+        </div>
+      </div>
+    </div>
+    <a href="${basePath}/auth/register" class="btn btn-primary btn-lg px-5">
+      Start Free Trial <i class="bi bi-arrow-right ms-2"></i>
+    </a>
+  </div>
+</section>
+
+<style>
+  .demo-card { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+  .demo-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); }
+  .demo-card.selected { border: 2px solid var(--accent-orange); }
+  .chat-message { max-width: 80%; margin-bottom: 1rem; }
+  .chat-message.ai { margin-right: auto; }
+  .chat-message.user { margin-left: auto; }
+  .chat-bubble { padding: 1rem; border-radius: 1rem; }
+  .chat-bubble.ai { background: #f1f5f9; }
+  .chat-bubble.user { background: var(--accent-orange); color: white; }
+</style>
+
+<script>
+  const basePath = '${basePath}';
+  let selectedDemo = null;
+  let messageHistory = [];
+
+  const demoScenarios = {
+    pen: {
+      title: 'Premium Pen Sales',
+      subtitle: 'Executive Buyer',
+      opener: "Hi! I'm looking for a nice pen as a gift for my boss. He's retiring next month. What do you have?",
+      tips: [
+        "Ask about the boss - relationship, preferences, what kind of impression they want to make",
+        "Explore budget range early but tactfully",
+        "Emphasize the emotional value of a meaningful retirement gift"
+      ]
+    },
+    auto: {
+      title: 'Automotive Sales',
+      subtitle: 'Family Shopper',
+      opener: "We're thinking about getting a new SUV. Our lease is up in two months. What do you have in the mid-size range?",
+      tips: [
+        "Discover their family needs - kids, pets, cargo requirements",
+        "Ask about their current vehicle and what they like/dislike",
+        "Understand their decision timeline and process"
+      ]
+    },
+    saas: {
+      title: 'SaaS Software Sales',
+      subtitle: 'IT Director',
+      opener: "I downloaded your whitepaper on sales automation. We're evaluating tools in this space. Can you tell me more about your platform?",
+      tips: [
+        "Identify their current pain points and existing solutions",
+        "Understand the buying committee - who else is involved?",
+        "Focus on ROI and integration with existing systems"
+      ]
+    }
+  };
+
+  function selectDemo(type) {
+    selectedDemo = type;
+    document.querySelectorAll('.demo-card').forEach(c => c.classList.remove('selected'));
+    event.currentTarget.closest('.demo-card').classList.add('selected');
+
+    const scenario = demoScenarios[type];
+    document.getElementById('demoTitle').textContent = scenario.title;
+    document.getElementById('demoSubtitle').textContent = scenario.subtitle;
+    document.getElementById('demoTips').innerHTML = scenario.tips.map(t => '<li>' + t + '</li>').join('');
+
+    messageHistory = [];
+    document.getElementById('chatMessages').innerHTML = '';
+    addMessage(scenario.opener, 'ai');
+
+    document.getElementById('demoChat').style.display = 'block';
+    document.getElementById('demoChat').scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('demoInput').focus();
+  }
+
+  function addMessage(text, type) {
+    const container = document.getElementById('chatMessages');
+    const msg = document.createElement('div');
+    msg.className = 'chat-message ' + type;
+    msg.innerHTML = '<div class="chat-bubble ' + type + '">' + text + '</div>';
+    container.appendChild(msg);
+    container.scrollTop = container.scrollHeight;
+    messageHistory.push({ role: type === 'ai' ? 'assistant' : 'user', content: text });
+  }
+
+  function sendDemoMessage(e) {
+    e.preventDefault();
+    const input = document.getElementById('demoInput');
+    const message = input.value.trim();
+    if (!message) return;
+
+    addMessage(message, 'user');
+    input.value = '';
+
+    // Simulate AI thinking
+    setTimeout(() => {
+      const responses = [
+        "That's interesting. Tell me more about what you're looking for specifically.",
+        "I appreciate that perspective. What would it take for this to be the right solution for you?",
+        "That's a common concern. Let me address that...",
+        "Great question! Many of our customers asked the same thing initially.",
+        "I understand. What's most important to you in making this decision?"
+      ];
+      addMessage(responses[Math.floor(Math.random() * responses.length)], 'ai');
+    }, 1000);
+  }
+
+  function resetDemo() {
+    if (selectedDemo) {
+      const scenario = demoScenarios[selectedDemo];
+      messageHistory = [];
+      document.getElementById('chatMessages').innerHTML = '';
+      addMessage(scenario.opener, 'ai');
+    }
+  }
+</script>
+
+` }) %>

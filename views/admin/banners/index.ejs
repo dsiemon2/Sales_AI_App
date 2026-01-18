@@ -1,0 +1,449 @@
+<%- include('../../layouts/admin', { body: `
+
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-image me-2"></i>Homepage Banners</h1>
+      <p class="text-muted mb-0">Manage homepage carousel banners across industries</p>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBannerModal">
+      <i class="bi bi-plus-lg me-1"></i> Add Banner
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="GET" id="filterForm" class="row g-3 align-items-end">
+        <input type="hidden" name="token" value="${token || ''}">
+        <div class="col-md-4">
+          <label class="form-label">Industry</label>
+          <select name="industryId" id="industryFilter" class="form-select">
+            <option value="">All Industries</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Status</label>
+          <select name="status" id="statusFilter" class="form-select">
+            <option value="">All Status</option>
+            <option value="active" ${filters?.status === 'active' ? 'selected' : ''}>Active</option>
+            <option value="inactive" ${filters?.status === 'inactive' ? 'selected' : ''}>Inactive</option>
+            <option value="scheduled" ${filters?.status === 'scheduled' ? 'selected' : ''}>Scheduled</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-primary me-2"><i class="bi bi-funnel me-1"></i> Filter</button>
+          <a href="${basePath}/admin/banners?token=${token || ''}" class="btn btn-outline-secondary">Clear</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Carousel Settings -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="bi bi-sliders me-2"></i>Carousel Settings</h5>
+    </div>
+    <div class="card-body">
+      <form id="carouselSettingsForm" class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Slide Duration (ms)</label>
+          <input type="number" name="slideDuration" class="form-control" value="${carouselSettings?.slideDuration || 5000}" min="1000" max="30000" step="500">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Transition Effect</label>
+          <select name="transitionEffect" class="form-select">
+            <option value="slide" ${carouselSettings?.transitionEffect === 'slide' ? 'selected' : ''}>Slide</option>
+            <option value="fade" ${carouselSettings?.transitionEffect === 'fade' ? 'selected' : ''}>Fade</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Height (px)</label>
+          <input type="number" name="height" class="form-control" value="${carouselSettings?.height || 400}" min="200" max="800">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">&nbsp;</label>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="showIndicators" name="showIndicators" ${carouselSettings?.showIndicators !== false ? 'checked' : ''}>
+            <label class="form-check-label" for="showIndicators">Indicators</label>
+          </div>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="submit" class="btn btn-outline-primary">
+            <i class="bi bi-check-lg me-1"></i> Save
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Banners Grid -->
+  <div class="row g-4" id="bannersGrid"></div>
+</div>
+
+<!-- Add Banner Modal -->
+<div class="modal fade" id="addBannerModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-lg me-2"></i>Add Banner</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="addBannerForm">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Industry</label>
+              <select name="industryId" class="form-select" id="addIndustrySelect">
+                <option value="">All Industries (Global)</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Status</label>
+              <div class="form-check form-switch mt-2">
+                <input class="form-check-input" type="checkbox" id="addIsActive" name="isActive" checked>
+                <label class="form-check-label" for="addIsActive">Active</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Title</label>
+              <input type="text" name="title" class="form-control" placeholder="Banner headline...">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Subtitle</label>
+              <input type="text" name="subtitle" class="form-control" placeholder="Supporting text...">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Desktop Image URL <span class="text-danger">*</span></label>
+              <input type="url" name="desktopImageUrl" class="form-control" required placeholder="https://...">
+              <small class="text-muted">Recommended: 1920x600 pixels</small>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Mobile Image URL</label>
+              <input type="url" name="mobileImageUrl" class="form-control" placeholder="https://...">
+              <small class="text-muted">Recommended: 768x400 pixels (optional)</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Link URL</label>
+              <input type="url" name="linkUrl" class="form-control" placeholder="https://...">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Button Text</label>
+              <input type="text" name="buttonText" class="form-control" placeholder="Learn More">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Text Position</label>
+              <select name="textPosition" class="form-select">
+                <option value="left">Left</option>
+                <option value="center" selected>Center</option>
+                <option value="right">Right</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Text Color</label>
+              <div class="input-group">
+                <input type="color" name="textColor" class="form-control form-control-color" value="#ffffff">
+                <input type="text" class="form-control color-text" value="#ffffff" readonly>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Overlay Color</label>
+              <input type="text" name="overlayColor" class="form-control" value="rgba(0,0,0,0.3)" placeholder="rgba(0,0,0,0.3)">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Start Date</label>
+              <input type="datetime-local" name="startDate" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">End Date</label>
+              <input type="datetime-local" name="endDate" class="form-control">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Create Banner</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Banner Modal -->
+<div class="modal fade" id="editBannerModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Banner</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="editBannerForm">
+        <input type="hidden" name="id" id="editId">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Industry</label>
+              <select name="industryId" class="form-select" id="editIndustrySelect">
+                <option value="">All Industries (Global)</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Status</label>
+              <div class="form-check form-switch mt-2">
+                <input class="form-check-input" type="checkbox" id="editIsActive" name="isActive">
+                <label class="form-check-label" for="editIsActive">Active</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Title</label>
+              <input type="text" name="title" id="editTitle" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Subtitle</label>
+              <input type="text" name="subtitle" id="editSubtitle" class="form-control">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Desktop Image URL <span class="text-danger">*</span></label>
+              <input type="url" name="desktopImageUrl" id="editDesktopImageUrl" class="form-control" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Mobile Image URL</label>
+              <input type="url" name="mobileImageUrl" id="editMobileImageUrl" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Link URL</label>
+              <input type="url" name="linkUrl" id="editLinkUrl" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Button Text</label>
+              <input type="text" name="buttonText" id="editButtonText" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Text Position</label>
+              <select name="textPosition" id="editTextPosition" class="form-select">
+                <option value="left">Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Text Color</label>
+              <div class="input-group">
+                <input type="color" name="textColor" id="editTextColor" class="form-control form-control-color">
+                <input type="text" class="form-control color-text" id="editTextColorText" readonly>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Overlay Color</label>
+              <input type="text" name="overlayColor" id="editOverlayColor" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Start Date</label>
+              <input type="datetime-local" name="startDate" id="editStartDate" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">End Date</label>
+              <input type="datetime-local" name="endDate" id="editEndDate" class="form-control">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const basePath = '${basePath}';
+  const token = '${token || ''}';
+  const industries = ${JSON.stringify(industries || [])};
+  const banners = ${JSON.stringify(banners || [])};
+  const filters = ${JSON.stringify(filters || {})};
+
+  function populateIndustryDropdowns() {
+    const selects = ['industryFilter', 'addIndustrySelect', 'editIndustrySelect'];
+    selects.forEach(selectId => {
+      const select = document.getElementById(selectId);
+      if (!select) return;
+      industries.forEach(ind => {
+        const option = document.createElement('option');
+        option.value = ind.id;
+        option.textContent = ind.name;
+        if (selectId === 'industryFilter' && filters.industryId === ind.id) {
+          option.selected = true;
+        }
+        select.appendChild(option);
+      });
+    });
+  }
+
+  function renderBanners() {
+    const grid = document.getElementById('bannersGrid');
+
+    if (banners.length === 0) {
+      grid.innerHTML = '<div class="col-12"><div class="card"><div class="card-body text-center py-5 text-muted"><i class="bi bi-image fs-1 d-block mb-2"></i>No banners found.<br><small>Create your first banner to get started.</small></div></div></div>';
+      return;
+    }
+
+    let html = '';
+    banners.forEach((banner, index) => {
+      const industryName = banner.industry ? banner.industry.name : 'All Industries';
+      const now = new Date();
+      const startDate = banner.startDate ? new Date(banner.startDate) : null;
+      const endDate = banner.endDate ? new Date(banner.endDate) : null;
+
+      let status = banner.isActive ? 'Active' : 'Inactive';
+      let statusClass = banner.isActive ? 'bg-success' : 'bg-secondary';
+
+      if (banner.isActive) {
+        if (startDate && startDate > now) {
+          status = 'Scheduled';
+          statusClass = 'bg-warning text-dark';
+        } else if (endDate && endDate < now) {
+          status = 'Expired';
+          statusClass = 'bg-danger';
+        }
+      }
+
+      html += '<div class="col-md-6 col-lg-4">';
+      html += '<div class="card h-100">';
+      html += '<div class="position-relative">';
+      html += '<img src="' + (banner.desktopImageUrl || 'https://via.placeholder.com/400x200?text=No+Image') + '" class="card-img-top" alt="' + (banner.title || 'Banner') + '" style="height: 180px; object-fit: cover;" onerror="this.src=\\'https://via.placeholder.com/400x200?text=Image+Error\\'">';
+      html += '<span class="position-absolute top-0 end-0 m-2 badge ' + statusClass + '">' + status + '</span>';
+      html += '<span class="position-absolute top-0 start-0 m-2 badge bg-dark">#' + (index + 1) + '</span>';
+      html += '</div>';
+      html += '<div class="card-body">';
+      html += '<h6 class="card-title">' + (banner.title || 'Untitled Banner') + '</h6>';
+      if (banner.subtitle) html += '<p class="card-text text-muted small">' + banner.subtitle + '</p>';
+      html += '<div class="d-flex justify-content-between align-items-center">';
+      html += '<span class="badge bg-light text-dark">' + industryName + '</span>';
+      html += '<div>';
+      html += '<button class="btn btn-sm btn-outline-secondary me-1" onclick="editBanner(\\'' + banner.id + '\\')" data-bs-toggle="tooltip" title="Edit"><i class="bi bi-pencil"></i></button>';
+      html += '<button class="btn btn-sm btn-outline-danger" onclick="deleteBanner(\\'' + banner.id + '\\')" data-bs-toggle="tooltip" title="Delete"><i class="bi bi-trash"></i></button>';
+      html += '</div>';
+      html += '</div>';
+      html += '</div>';
+      html += '</div>';
+      html += '</div>';
+    });
+
+    grid.innerHTML = html;
+    initTooltips();
+  }
+
+  function editBanner(id) {
+    const banner = banners.find(b => b.id === id);
+    if (!banner) return;
+
+    document.getElementById('editId').value = banner.id;
+    document.getElementById('editIndustrySelect').value = banner.industryId || '';
+    document.getElementById('editIsActive').checked = banner.isActive;
+    document.getElementById('editTitle').value = banner.title || '';
+    document.getElementById('editSubtitle').value = banner.subtitle || '';
+    document.getElementById('editDesktopImageUrl').value = banner.desktopImageUrl || '';
+    document.getElementById('editMobileImageUrl').value = banner.mobileImageUrl || '';
+    document.getElementById('editLinkUrl').value = banner.linkUrl || '';
+    document.getElementById('editButtonText').value = banner.buttonText || '';
+    document.getElementById('editTextPosition').value = banner.textPosition || 'center';
+    document.getElementById('editTextColor').value = banner.textColor || '#ffffff';
+    document.getElementById('editTextColorText').value = banner.textColor || '#ffffff';
+    document.getElementById('editOverlayColor').value = banner.overlayColor || 'rgba(0,0,0,0.3)';
+    document.getElementById('editStartDate').value = banner.startDate ? banner.startDate.substring(0, 16) : '';
+    document.getElementById('editEndDate').value = banner.endDate ? banner.endDate.substring(0, 16) : '';
+
+    const modal = new bootstrap.Modal(document.getElementById('editBannerModal'));
+    modal.show();
+  }
+
+  async function deleteBanner(id) {
+    if (!confirm('Are you sure you want to delete this banner?')) return;
+
+    try {
+      const res = await fetch(basePath + '/api/v1/banners/' + id + '?token=' + token, { method: 'DELETE' });
+      if (res.ok) {
+        location.reload();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to delete banner');
+      }
+    } catch (err) {
+      alert('Error deleting banner');
+    }
+  }
+
+  function initTooltips() {
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+      new bootstrap.Tooltip(el);
+    });
+  }
+
+  // Color picker sync
+  document.querySelectorAll('input[type="color"]').forEach(colorInput => {
+    colorInput.addEventListener('input', (e) => {
+      const textInput = e.target.parentElement.querySelector('.color-text');
+      if (textInput) textInput.value = e.target.value;
+    });
+  });
+
+  // Form submissions
+  document.getElementById('addBannerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData);
+    data.isActive = form.isActive.checked;
+
+    try {
+      const res = await fetch(basePath + '/api/v1/banners?token=' + token, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (res.ok) {
+        location.reload();
+      } else {
+        const result = await res.json();
+        alert(result.error || 'Failed to create banner');
+      }
+    } catch (err) {
+      alert('Error creating banner');
+    }
+  });
+
+  document.getElementById('editBannerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const id = form.id.value;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData);
+    data.isActive = form.isActive.checked;
+
+    try {
+      const res = await fetch(basePath + '/api/v1/banners/' + id + '?token=' + token, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (res.ok) {
+        location.reload();
+      } else {
+        const result = await res.json();
+        alert(result.error || 'Failed to update banner');
+      }
+    } catch (err) {
+      alert('Error updating banner');
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    populateIndustryDropdowns();
+    renderBanners();
+  });
+</script>
+
+` }) %>

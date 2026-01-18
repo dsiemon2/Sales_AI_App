@@ -1,0 +1,79 @@
+<%- include('../layouts/auth', { subtitle: 'Create Your Account', body: `
+
+${typeof error !== 'undefined' && error ? `
+  <div class="alert alert-danger d-flex align-items-center">
+    <i class="bi bi-exclamation-circle me-2"></i>
+    ${error}
+  </div>
+` : ''}
+
+${typeof errors !== 'undefined' && errors && errors.length > 0 ? `
+  <div class="alert alert-danger">
+    <ul class="mb-0 ps-3">
+      ${errors.map(e => '<li>' + e.msg + '</li>').join('')}
+    </ul>
+  </div>
+` : ''}
+
+<form method="POST" action="${basePath}/auth/register">
+  <div class="row g-3">
+    <div class="col-6">
+      <label class="form-label fw-medium">First Name</label>
+      <input type="text" class="form-control" name="firstName" value="${typeof formData !== 'undefined' && formData ? formData.firstName || '' : ''}" required>
+    </div>
+    <div class="col-6">
+      <label class="form-label fw-medium">Last Name</label>
+      <input type="text" class="form-control" name="lastName" value="${typeof formData !== 'undefined' && formData ? formData.lastName || '' : ''}" required>
+    </div>
+  </div>
+
+  <div class="mb-3 mt-3">
+    <label class="form-label fw-medium">Email</label>
+    <input type="email" class="form-control" name="email" value="${typeof formData !== 'undefined' && formData ? formData.email || '' : ''}" required>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label fw-medium">Password</label>
+    <input type="password" class="form-control" name="password" minlength="8" required>
+    <div class="form-text">At least 8 characters with uppercase, lowercase, and number</div>
+  </div>
+
+  <div class="mb-4">
+    <label class="form-label fw-medium">Confirm Password</label>
+    <input type="password" class="form-control" name="confirmPassword" required>
+  </div>
+
+  <div class="mb-4">
+    <div class="form-check">
+      <input type="checkbox" class="form-check-input" name="terms" id="terms" required>
+      <label class="form-check-label" for="terms">
+        I agree to the <a href="${basePath}/terms" target="_blank">Terms of Service</a> and <a href="${basePath}/privacy" target="_blank">Privacy Policy</a>
+      </label>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary w-100">
+    <i class="bi bi-person-plus me-2"></i>Create Account
+  </button>
+</form>
+
+<div class="divider">or sign up with</div>
+
+<div class="row g-2">
+  <div class="col-6">
+    <a href="${basePath}/auth/google" class="social-btn d-block text-decoration-none text-dark">
+      <i class="bi bi-google"></i> Google
+    </a>
+  </div>
+  <div class="col-6">
+    <a href="${basePath}/auth/microsoft" class="social-btn d-block text-decoration-none text-dark">
+      <i class="bi bi-microsoft"></i> Microsoft
+    </a>
+  </div>
+</div>
+
+<p class="text-center mt-4 mb-0">
+  Already have an account? <a href="${basePath}/auth/login" class="text-decoration-none fw-medium">Sign in</a>
+</p>
+
+` }) %>

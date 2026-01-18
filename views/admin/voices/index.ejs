@@ -1,0 +1,531 @@
+<%- include('../../layouts/admin', { body: `
+
+<style>
+  .voice-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 3px solid transparent;
+  }
+  .voice-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  }
+  .voice-card.selected {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.25);
+  }
+  .voice-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    margin: 0 auto 1rem;
+    color: white;
+  }
+  .voice-card .play-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .voice-card:hover .play-btn {
+    opacity: 1;
+  }
+  .mode-card {
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 3px solid transparent;
+  }
+  .mode-card:hover {
+    border-color: #dee2e6;
+  }
+  .mode-card.selected {
+    border-color: #0d6efd;
+    background: rgba(13, 110, 253, 0.05);
+  }
+  .difficulty-btn {
+    transition: all 0.2s;
+  }
+  .difficulty-btn.active {
+    transform: scale(1.05);
+  }
+  .lang-card {
+    transition: all 0.2s;
+  }
+  .lang-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .lang-card.disabled-lang {
+    opacity: 0.5;
+  }
+  .lang-flag {
+    font-size: 2rem;
+    margin-right: 0.75rem;
+  }
+  .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+</style>
+
+<h2 class="mb-4"><i class="bi bi-volume-up text-primary me-2"></i>Voices, Languages & Training Mode</h2>
+
+<!-- Company Info -->
+${typeof tenant !== 'undefined' && tenant ? '<div class="alert alert-info mb-4"><i class="bi bi-building me-2"></i>Viewing data for: <strong>' + tenant.name + '</strong></div>' : ''}
+
+<!-- Toast container -->
+<div class="toast-container"></div>
+
+<!-- Training Mode Section -->
+<div class="card mb-4">
+  <div class="card-header bg-warning text-dark">
+    <h5 class="mb-0"><i class="bi bi-arrow-left-right me-2"></i>Training Mode</h5>
+  </div>
+  <div class="card-body">
+    <p class="text-muted mb-4">Choose how the sales training session will be conducted.</p>
+
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card mode-card h-100 p-3 selected" data-mode="ai_roleplay" onclick="selectMode('ai_roleplay')">
+          <div class="text-center">
+            <i class="bi bi-robot text-primary" style="font-size: 3rem;"></i>
+            <h4 class="mt-3">AI Role-Play</h4>
+            <p class="text-muted mb-0">The AI plays the customer while the trainee practices sales techniques. Best for autonomous practice.</p>
+            <span class="badge bg-primary mt-2"><i class="bi bi-check-lg"></i> Active</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card mode-card h-100 p-3" data-mode="coach_assist" onclick="selectMode('coach_assist')">
+          <div class="text-center">
+            <i class="bi bi-person-video3 text-success" style="font-size: 3rem;"></i>
+            <h4 class="mt-3">Coach Assist</h4>
+            <p class="text-muted mb-0">A human coach observes while AI provides real-time suggestions and scoring. Best for team training.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI Customer Difficulty -->
+<div class="card mb-4" id="difficultySection">
+  <div class="card-header bg-danger text-white">
+    <h5 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>AI Customer Difficulty</h5>
+  </div>
+  <div class="card-body">
+    <p class="text-muted mb-4">How challenging should the AI customer persona be?</p>
+
+    <div class="row g-3">
+      <div class="col-md-3 col-6">
+        <button class="btn btn-outline-success w-100 difficulty-btn" onclick="selectDifficulty('easy')">
+          <i class="bi bi-emoji-smile d-block" style="font-size: 2rem;"></i>
+          <strong>Easy</strong>
+          <small class="d-block text-muted">Friendly, few objections</small>
+        </button>
+      </div>
+      <div class="col-md-3 col-6">
+        <button class="btn btn-warning w-100 difficulty-btn active" onclick="selectDifficulty('medium')">
+          <i class="bi bi-emoji-neutral d-block" style="font-size: 2rem;"></i>
+          <strong>Medium</strong>
+          <small class="d-block text-muted">Standard objections</small>
+        </button>
+      </div>
+      <div class="col-md-3 col-6">
+        <button class="btn btn-outline-danger w-100 difficulty-btn" onclick="selectDifficulty('hard')">
+          <i class="bi bi-emoji-frown d-block" style="font-size: 2rem;"></i>
+          <strong>Hard</strong>
+          <small class="d-block text-muted">Skeptical, price-focused</small>
+        </button>
+      </div>
+      <div class="col-md-3 col-6">
+        <button class="btn btn-outline-dark w-100 difficulty-btn" onclick="selectDifficulty('expert')">
+          <i class="bi bi-emoji-angry d-block" style="font-size: 2rem;"></i>
+          <strong>Expert</strong>
+          <small class="d-block text-muted">Hostile, many objections</small>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Voice Selection -->
+<div class="card mb-4">
+  <div class="card-header bg-primary text-white">
+    <h5 class="mb-0"><i class="bi bi-person-circle me-2"></i>Select AI Voice</h5>
+  </div>
+  <div class="card-body">
+    <p class="text-muted mb-4">Choose the voice for the AI customer persona. Click to select, hover to preview.</p>
+
+    <!-- Male Voices -->
+    <h6 class="text-muted mb-3"><i class="bi bi-gender-male me-2"></i>Male Voices</h6>
+    <div class="row g-4 mb-4">
+      <div class="col-md-4 col-sm-6">
+        <div class="card voice-card h-100 text-center p-3 position-relative" data-voice="ash" onclick="selectVoice('ash')">
+          <button class="btn btn-sm btn-light play-btn" data-bs-toggle="tooltip" title="Preview voice" onclick="event.stopPropagation(); playVoice('ash')">
+            <i class="bi bi-play-fill"></i>
+          </button>
+          <div class="voice-avatar" style="background: #2c3e50;">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=ashmale&top=shortFlat,shortCurly,shortWaved&facialHair=beardLight,beardMedium,moustacheFancy&facialHairProbability=50&clothesColor=3c4f5c,65c9ff&backgroundColor=transparent" alt="Ash" width="90" height="90">
+          </div>
+          <h5 class="mb-1">Ash</h5>
+          <span class="badge bg-info mb-1">American English</span>
+          <small class="text-muted d-block">Confident & authoritative</small>
+          <small class="text-muted d-block" style="font-size: 0.75rem;">Clear articulation, professional</small>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6">
+        <div class="card voice-card h-100 text-center p-3 position-relative" data-voice="echo" onclick="selectVoice('echo')">
+          <button class="btn btn-sm btn-light play-btn" data-bs-toggle="tooltip" title="Preview voice" onclick="event.stopPropagation(); playVoice('echo')">
+            <i class="bi bi-play-fill"></i>
+          </button>
+          <div class="voice-avatar" style="background: #1a5276;">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=echomale&top=shortFlat,shortCurly,shortWaved&facialHair=beardLight,beardMedium,moustacheFancy&facialHairProbability=50&clothesColor=3c4f5c,65c9ff&backgroundColor=transparent" alt="Echo" width="90" height="90">
+          </div>
+          <h5 class="mb-1">Echo</h5>
+          <span class="badge bg-info mb-1">American English</span>
+          <small class="text-muted d-block">Calm & reassuring</small>
+          <small class="text-muted d-block" style="font-size: 0.75rem;">Soft-spoken, gentle delivery</small>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6">
+        <div class="card voice-card h-100 text-center p-3 position-relative" data-voice="verse" onclick="selectVoice('verse')">
+          <button class="btn btn-sm btn-light play-btn" data-bs-toggle="tooltip" title="Preview voice" onclick="event.stopPropagation(); playVoice('verse')">
+            <i class="bi bi-play-fill"></i>
+          </button>
+          <div class="voice-avatar" style="background: #6f42c1;">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=versemale&top=shortFlat,shortCurly,shortWaved&facialHair=beardLight,beardMedium,moustacheFancy&facialHairProbability=50&clothesColor=3c4f5c,65c9ff&backgroundColor=transparent" alt="Verse" width="90" height="90">
+          </div>
+          <h5 class="mb-1">Verse</h5>
+          <span class="badge bg-info mb-1">American English</span>
+          <small class="text-muted d-block">Dynamic & engaging</small>
+          <small class="text-muted d-block" style="font-size: 0.75rem;">Energetic, great for sales</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Female Voices -->
+    <h6 class="text-muted mb-3"><i class="bi bi-gender-female me-2"></i>Female Voices</h6>
+    <div class="row g-4 mb-4">
+      <div class="col-md-4 col-sm-6">
+        <div class="card voice-card h-100 text-center p-3 position-relative selected" data-voice="alloy" onclick="selectVoice('alloy')">
+          <button class="btn btn-sm btn-light play-btn" data-bs-toggle="tooltip" title="Preview voice" onclick="event.stopPropagation(); playVoice('alloy')">
+            <i class="bi bi-play-fill"></i>
+          </button>
+          <div class="voice-avatar" style="background: #6c757d;">
+            <img src="https://api.dicebear.com/7.x/lorelei/svg?seed=alloywoman&backgroundColor=transparent" alt="Alloy" width="90" height="90">
+          </div>
+          <h5 class="mb-1">Alloy</h5>
+          <span class="badge bg-info mb-1">American English</span>
+          <small class="text-muted d-block">Neutral & balanced</small>
+          <small class="text-muted d-block" style="font-size: 0.75rem;">Versatile, works for any context</small>
+          <span class="badge bg-primary mt-2"><i class="bi bi-check-lg"></i> Active</span>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6">
+        <div class="card voice-card h-100 text-center p-3 position-relative" data-voice="ballad" onclick="selectVoice('ballad')">
+          <button class="btn btn-sm btn-light play-btn" data-bs-toggle="tooltip" title="Preview voice" onclick="event.stopPropagation(); playVoice('ballad')">
+            <i class="bi bi-play-fill"></i>
+          </button>
+          <div class="voice-avatar" style="background: #d63384;">
+            <img src="https://api.dicebear.com/7.x/lorelei/svg?seed=balladwoman&backgroundColor=transparent" alt="Ballad" width="90" height="90">
+          </div>
+          <h5 class="mb-1">Ballad</h5>
+          <span class="badge bg-info mb-1">American English</span>
+          <small class="text-muted d-block">Warm & expressive</small>
+          <small class="text-muted d-block" style="font-size: 0.75rem;">Emotional range, storytelling</small>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6">
+        <div class="card voice-card h-100 text-center p-3 position-relative" data-voice="coral" onclick="selectVoice('coral')">
+          <button class="btn btn-sm btn-light play-btn" data-bs-toggle="tooltip" title="Preview voice" onclick="event.stopPropagation(); playVoice('coral')">
+            <i class="bi bi-play-fill"></i>
+          </button>
+          <div class="voice-avatar" style="background: #fd7e14;">
+            <img src="https://api.dicebear.com/7.x/lorelei/svg?seed=coralwoman&backgroundColor=transparent" alt="Coral" width="90" height="90">
+          </div>
+          <h5 class="mb-1">Coral</h5>
+          <span class="badge bg-info mb-1">American English</span>
+          <small class="text-muted d-block">Friendly & upbeat</small>
+          <small class="text-muted d-block" style="font-size: 0.75rem;">Cheerful, great for sales</small>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6">
+        <div class="card voice-card h-100 text-center p-3 position-relative" data-voice="sage" onclick="selectVoice('sage')">
+          <button class="btn btn-sm btn-light play-btn" data-bs-toggle="tooltip" title="Preview voice" onclick="event.stopPropagation(); playVoice('sage')">
+            <i class="bi bi-play-fill"></i>
+          </button>
+          <div class="voice-avatar" style="background: #198754;">
+            <img src="https://api.dicebear.com/7.x/lorelei/svg?seed=sagewoman&backgroundColor=transparent" alt="Sage" width="90" height="90">
+          </div>
+          <h5 class="mb-1">Sage</h5>
+          <span class="badge bg-info mb-1">American English</span>
+          <small class="text-muted d-block">Wise & professional</small>
+          <small class="text-muted d-block" style="font-size: 0.75rem;">Mature, trustworthy tone</small>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6">
+        <div class="card voice-card h-100 text-center p-3 position-relative" data-voice="shimmer" onclick="selectVoice('shimmer')">
+          <button class="btn btn-sm btn-light play-btn" data-bs-toggle="tooltip" title="Preview voice" onclick="event.stopPropagation(); playVoice('shimmer')">
+            <i class="bi bi-play-fill"></i>
+          </button>
+          <div class="voice-avatar" style="background: #0dcaf0;">
+            <img src="https://api.dicebear.com/7.x/lorelei/svg?seed=shimmerwoman&backgroundColor=transparent" alt="Shimmer" width="90" height="90">
+          </div>
+          <h5 class="mb-1">Shimmer</h5>
+          <span class="badge bg-info mb-1">American English</span>
+          <small class="text-muted d-block">Bright & energetic</small>
+          <small class="text-muted d-block" style="font-size: 0.75rem;">Youthful, enthusiastic</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info about accents -->
+    <div class="alert alert-warning mt-3">
+      <h6><i class="bi bi-exclamation-triangle me-2"></i>British & Other Accents Not Available</h6>
+      <p class="mb-2"><strong>OpenAI's Realtime API only offers American English voices.</strong> British, Australian, Southern US, and other accents are not currently available through OpenAI.</p>
+      <p class="mb-0"><strong>For British voices and more accents:</strong> Integration with
+        <a href="https://elevenlabs.io" target="_blank" class="alert-link">ElevenLabs</a> or
+        <a href="https://play.ht" target="_blank" class="alert-link">PlayHT</a> would be required. These services offer:
+        <ul class="mb-0 mt-2">
+          <li>British English (Male & Female)</li>
+          <li>Australian English</li>
+          <li>Southern US / Texas accent</li>
+          <li>Irish, Scottish, Indian English, and 50+ more</li>
+        </ul>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Languages Section -->
+<div class="card mb-4">
+  <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="bi bi-translate me-2"></i>Supported Languages</h5>
+    <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addLanguageModal">
+      <i class="bi bi-plus-lg"></i> Add Language
+    </button>
+  </div>
+  <div class="card-body">
+    <p class="text-muted mb-4">Enable or disable languages for your voice assistant.</p>
+    <div id="languagesContainer" class="row g-3"></div>
+  </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row g-3">
+  <div class="col-6 col-md">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-arrow-left-right text-warning" style="font-size: 2rem;"></i>
+        <h4 class="mt-2" id="statMode">AI Role-Play</h4>
+        <small class="text-muted">Current Mode</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-speedometer2 text-danger" style="font-size: 2rem;"></i>
+        <h4 class="mt-2 text-capitalize" id="statDifficulty">Medium</h4>
+        <small class="text-muted">Difficulty</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-volume-up-fill text-primary" style="font-size: 2rem;"></i>
+        <h4 class="mt-2 text-capitalize" id="statVoice">Alloy</h4>
+        <small class="text-muted">Current Voice</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-translate text-success" style="font-size: 2rem;"></i>
+        <h4 class="mt-2" id="statLanguages">0</h4>
+        <small class="text-muted">Active Languages</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Language Modal -->
+<div class="modal fade" id="addLanguageModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-lg me-2"></i>Add Language</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="addLanguageForm">
+          <div class="mb-3">
+            <label class="form-label">Language Name</label>
+            <input type="text" class="form-control" name="name" placeholder="e.g., Portuguese" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Native Name</label>
+            <input type="text" class="form-control" name="nativeName" placeholder="e.g., Portugues">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Language Code</label>
+            <input type="text" class="form-control" name="code" placeholder="e.g., pt" maxlength="5" required>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="addLanguage()"><i class="bi bi-plus-lg me-1"></i>Add Language</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const basePath = '${basePath}';
+const token = '${token || ''}';
+const languages = ${JSON.stringify(languages)};
+
+let currentMode = 'ai_roleplay';
+let currentDifficulty = 'medium';
+let currentVoice = 'alloy';
+
+function renderLanguages() {
+  const container = document.getElementById('languagesContainer');
+  if (!languages || languages.length === 0) {
+    container.innerHTML = '<div class="col-12 text-center py-4 text-muted">No languages configured.</div>';
+    return;
+  }
+
+  let html = '';
+  let activeCount = 0;
+  languages.forEach(l => {
+    if (l.enabled) activeCount++;
+    html += '<div class="col-md-4 col-sm-6">';
+    html += '<div class="card lang-card ' + (l.enabled ? '' : 'disabled-lang') + '">';
+    html += '<div class="card-body d-flex align-items-center justify-content-between">';
+    html += '<div class="d-flex align-items-center">';
+    html += '<span class="lang-flag">&#127760;</span>';
+    html += '<div><strong>' + l.name + '</strong><br>';
+    html += '<small class="text-muted">' + l.nativeName + ' (' + l.code + ')</small></div>';
+    html += '</div>';
+    html += '<div class="form-check form-switch">';
+    html += '<input class="form-check-input" type="checkbox" id="lang-' + l.code + '" ' + (l.enabled ? 'checked' : '') + ' onchange="toggleLanguage(\\'' + l.id + '\\', this.checked)">';
+    html += '</div></div>';
+    html += '<div class="card-footer bg-transparent border-top-0 pt-0">';
+    html += '<small class="text-muted"><i class="bi bi-file-text"></i> 0 KB documents</small>';
+    html += '</div></div></div>';
+  });
+  container.innerHTML = html;
+  document.getElementById('statLanguages').textContent = activeCount;
+}
+
+function selectMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-card').forEach(card => {
+    card.classList.remove('selected');
+    const badge = card.querySelector('.badge');
+    if (badge) badge.remove();
+  });
+  const selected = document.querySelector('[data-mode="' + mode + '"]');
+  selected.classList.add('selected');
+  const badge = document.createElement('span');
+  badge.className = 'badge bg-primary mt-2';
+  badge.innerHTML = '<i class="bi bi-check-lg"></i> Active';
+  selected.querySelector('.text-center').appendChild(badge);
+  document.getElementById('statMode').textContent = mode === 'ai_roleplay' ? 'AI Role-Play' : 'Coach Assist';
+  showToast('Training mode updated to ' + (mode === 'ai_roleplay' ? 'AI Role-Play' : 'Coach Assist'));
+}
+
+function selectDifficulty(difficulty) {
+  currentDifficulty = difficulty;
+  document.querySelectorAll('.difficulty-btn').forEach(btn => {
+    btn.classList.remove('active', 'btn-success', 'btn-warning', 'btn-danger', 'btn-dark');
+    const text = btn.textContent.trim();
+    if (text.includes('Easy')) btn.classList.add('btn-outline-success');
+    else if (text.includes('Medium')) btn.classList.add('btn-outline-warning');
+    else if (text.includes('Hard')) btn.classList.add('btn-outline-danger');
+    else btn.classList.add('btn-outline-dark');
+  });
+  const btn = event.target.closest('.difficulty-btn');
+  btn.classList.add('active');
+  btn.classList.remove('btn-outline-success', 'btn-outline-warning', 'btn-outline-danger', 'btn-outline-dark');
+  const colors = { easy: 'success', medium: 'warning', hard: 'danger', expert: 'dark' };
+  btn.classList.add('btn-' + colors[difficulty]);
+  document.getElementById('statDifficulty').textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+  showToast('Difficulty set to ' + difficulty.charAt(0).toUpperCase() + difficulty.slice(1));
+}
+
+function selectVoice(voice) {
+  currentVoice = voice;
+  document.querySelectorAll('.voice-card').forEach(card => {
+    card.classList.remove('selected');
+    const badge = card.querySelector('.badge.bg-primary');
+    if (badge && badge.textContent.includes('Active')) badge.remove();
+  });
+  const selected = document.querySelector('[data-voice="' + voice + '"]');
+  selected.classList.add('selected');
+  selected.insertAdjacentHTML('beforeend', '<span class="badge bg-primary mt-2"><i class="bi bi-check-lg"></i> Active</span>');
+  document.getElementById('statVoice').textContent = voice.charAt(0).toUpperCase() + voice.slice(1);
+  showToast('Voice changed to ' + voice.charAt(0).toUpperCase() + voice.slice(1));
+}
+
+function playVoice(voice) {
+  const phrases = {
+    'ash': "Hello, I'm interested in what you're selling. Can you tell me more?",
+    'echo': "I've been thinking about this for a while. What makes your product different?",
+    'verse': "This sounds exciting! Show me what you've got!",
+    'alloy': "Hi there. I'm looking for something specific. Can you help?",
+    'ballad': "I'm not sure if this is right for me. Convince me.",
+    'coral': "Oh how nice! Tell me everything about this!",
+    'sage': "I need to make a smart decision here. What are the facts?",
+    'shimmer': "Wow, this looks amazing! I want to know more!"
+  };
+  const utterance = new SpeechSynthesisUtterance(phrases[voice] || 'Hello! I am ' + voice + ', ready to help you practice sales!');
+  window.speechSynthesis.speak(utterance);
+  showToast('Playing preview for ' + voice.charAt(0).toUpperCase() + voice.slice(1) + '...', 'info');
+}
+
+function toggleLanguage(langId, enabled) {
+  showToast('Language ' + (enabled ? 'enabled' : 'disabled'));
+  // Update active count
+  let count = 0;
+  document.querySelectorAll('.lang-card').forEach(card => {
+    const checkbox = card.querySelector('input[type="checkbox"]');
+    if (checkbox && checkbox.checked) count++;
+    if (card.querySelector('#lang-' + langId.split('_')[0])) {
+      card.classList.toggle('disabled-lang', !enabled);
+    }
+  });
+  document.getElementById('statLanguages').textContent = languages.filter(l => l.enabled).length;
+}
+
+function addLanguage() {
+  const form = document.getElementById('addLanguageForm');
+  const formData = new FormData(form);
+  showToast('Language "' + formData.get('name') + '" added!');
+  bootstrap.Modal.getInstance(document.getElementById('addLanguageModal')).hide();
+  form.reset();
+}
+
+function showToast(message, type = 'primary') {
+  const container = document.querySelector('.toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast show align-items-center text-white bg-' + type + ' border-0';
+  toast.innerHTML = '<div class="d-flex"><div class="toast-body">' + message + '</div><button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.closest(\\'.toast\\').remove()"></button></div>';
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderLanguages();
+  // Initialize tooltips
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+});
+</script>
+
+` }) %>

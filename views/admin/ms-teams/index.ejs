@@ -1,0 +1,199 @@
+<%- include('../../layouts/admin', { body: `
+
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-microsoft-teams me-2"></i>MS Teams Integration</h1>
+      <p class="text-muted mb-0">Connect your sales training with Microsoft Teams</p>
+    </div>
+    <button class="btn btn-primary" onclick="connectTeams()">
+      <i class="bi bi-plug me-1"></i> Connect Teams
+    </button>
+  </div>
+
+  <!-- Connection Status -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-4">
+      <div class="card bg-light">
+        <div class="card-body text-center">
+          <i class="bi bi-cloud-check text-success" style="font-size: 3rem;"></i>
+          <h5 class="mt-3">Connection Status</h5>
+          <span class="badge bg-warning text-dark">Not Connected</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-light">
+        <div class="card-body text-center">
+          <i class="bi bi-bell text-primary" style="font-size: 3rem;"></i>
+          <h5 class="mt-3">Notifications</h5>
+          <span class="badge bg-secondary">Disabled</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-light">
+        <div class="card-body text-center">
+          <i class="bi bi-calendar-event text-info" style="font-size: 3rem;"></i>
+          <h5 class="mt-3">Calendar Sync</h5>
+          <span class="badge bg-secondary">Disabled</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Configuration -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Teams Configuration</h5>
+    </div>
+    <div class="card-body">
+      <form id="teamsConfigForm">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Tenant ID</label>
+            <input type="text" class="form-control" name="tenantId" placeholder="Enter Microsoft Tenant ID">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Client ID</label>
+            <input type="text" class="form-control" name="clientId" placeholder="Enter Application Client ID">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Client Secret</label>
+            <input type="password" class="form-control" name="clientSecret" placeholder="Enter Client Secret">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Default Channel</label>
+            <select class="form-select" name="defaultChannel">
+              <option value="">Select a channel...</option>
+              <option value="sales-training">Sales Training</option>
+              <option value="general">General</option>
+              <option value="announcements">Announcements</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Webhook URL</label>
+            <input type="url" class="form-control" name="webhookUrl" placeholder="https://...">
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="card-footer">
+      <button class="btn btn-primary" onclick="saveConfig()">
+        <i class="bi bi-check-lg me-1"></i> Save Configuration
+      </button>
+    </div>
+  </div>
+
+  <!-- Notification Settings -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="bi bi-bell me-2"></i>Notification Settings</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Description</th>
+              <th>Teams Notification</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Session Completed</strong></td>
+              <td>Notify when a training session is completed</td>
+              <td>
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="notifySessionComplete">
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Sale Made</strong></td>
+              <td>Notify when a trainee successfully closes a sale</td>
+              <td>
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="notifySaleMade" checked>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>High Score Achieved</strong></td>
+              <td>Notify when a trainee achieves 90%+ score</td>
+              <td>
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="notifyHighScore" checked>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>New User Registered</strong></td>
+              <td>Notify when a new trainee joins</td>
+              <td>
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="notifyNewUser">
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Weekly Summary</strong></td>
+              <td>Send weekly training performance summary</td>
+              <td>
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="notifyWeeklySummary" checked>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="bi bi-activity me-2"></i>Recent Teams Activity</h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Timestamp</th>
+              <th>Event</th>
+              <th>Channel</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-muted">-</td>
+              <td colspan="3" class="text-center text-muted py-4">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                No Teams activity yet. Connect your Teams account to get started.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const basePath = '${basePath}';
+  const token = '${token || ''}';
+
+  function connectTeams() {
+    alert('Microsoft Teams OAuth flow would start here.\\nThis requires Azure AD app registration.');
+  }
+
+  function saveConfig() {
+    alert('Configuration saved! (Demo mode)');
+  }
+</script>
+
+` }) %>

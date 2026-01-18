@@ -1,0 +1,205 @@
+<%- include('../layouts/auth', {
+  body: `
+
+<style>
+  .demo-logins {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border: 1px dashed #dee2e6;
+  }
+  .demo-login-btn {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 8px;
+  }
+  .btn-oauth {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    font-weight: 500;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    background: white;
+    color: #374151;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .btn-oauth:hover {
+    border-color: #9ca3af;
+    background: #f9fafb;
+    color: #374151;
+  }
+  .password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    z-index: 10;
+    color: #6c757d;
+  }
+</style>
+
+<div id="alertContainer">
+  ${typeof error !== 'undefined' && error ? '<div class="alert alert-danger d-flex align-items-center"><i class="bi bi-exclamation-circle me-2"></i>' + error + '</div>' : ''}
+  ${typeof success !== 'undefined' && success ? '<div class="alert alert-success d-flex align-items-center"><i class="bi bi-check-circle me-2"></i>' + success + '</div>' : ''}
+</div>
+
+<!-- Demo Logins -->
+<div class="demo-logins">
+  <h6 class="mb-2"><i class="bi bi-key me-1"></i>Demo Logins</h6>
+  <div class="d-flex flex-wrap gap-1">
+    <button type="button" class="btn btn-outline-primary demo-login-btn" id="demoAdminBtn" data-bs-toggle="tooltip" title="Elite Writing - Company Admin">
+      <i class="bi bi-person-fill"></i> John (Admin)
+    </button>
+    <button type="button" class="btn btn-outline-secondary demo-login-btn" id="demoManagerBtn" data-bs-toggle="tooltip" title="Elite Writing - Sales Manager">
+      <i class="bi bi-person"></i> Sarah (Manager)
+    </button>
+    <button type="button" class="btn btn-outline-dark demo-login-btn" id="demoSuperBtn" data-bs-toggle="tooltip" title="Platform Super Admin">
+      <i class="bi bi-shield-lock"></i> Super Admin
+    </button>
+  </div>
+</div>
+
+<form method="POST" action="${basePath}/auth/login" id="loginForm">
+  <input type="hidden" name="redirect" value="${typeof redirect !== 'undefined' ? redirect : basePath + '/chat'}">
+
+  <div class="mb-3">
+    <label class="form-label fw-medium">Email</label>
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+      <input type="email" class="form-control" name="email" id="email" value="${typeof email !== 'undefined' && email ? email : ''}" required autofocus placeholder="Enter your email">
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label fw-medium d-flex justify-content-between">
+      <span>Password</span>
+      <a href="${basePath}/auth/forgot-password" class="text-decoration-none small">Forgot password?</a>
+    </label>
+    <div class="input-group position-relative">
+      <span class="input-group-text"><i class="bi bi-lock"></i></span>
+      <input type="password" class="form-control" name="password" id="password" required placeholder="Enter your password">
+      <span class="password-toggle" id="passwordToggle">
+        <i class="bi bi-eye" id="passwordToggleIcon"></i>
+      </span>
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <div class="form-check">
+      <input type="checkbox" class="form-check-input" name="remember" id="remember">
+      <label class="form-check-label" for="remember">Remember me</label>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary w-100" id="submitBtn">
+    <span id="submitText"><i class="bi bi-box-arrow-in-right me-2"></i>Sign In</span>
+    <span id="submitSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+  </button>
+</form>
+
+<div class="divider">or</div>
+
+<!-- Trial Code Section -->
+<form method="POST" action="${basePath}/auth/trial" class="mb-3">
+  <div class="input-group">
+    <input type="text" class="form-control" name="trialCode" placeholder="Enter trial code" style="border-radius: 12px 0 0 12px;">
+    <button type="submit" class="btn btn-outline-primary" style="border-radius: 0 12px 12px 0;">
+      <i class="bi bi-key me-1"></i>Activate
+    </button>
+  </div>
+  <small class="text-muted">Have a trial code? Enter it above to get started.</small>
+</form>
+
+<div class="divider">or continue with</div>
+
+<!-- OAuth Buttons -->
+<div class="d-grid gap-2 mb-3">
+  <button type="button" class="btn btn-oauth" id="googleBtn">
+    <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+    <span id="googleBtnText">Continue with Google</span>
+  </button>
+  <button type="button" class="btn btn-oauth" id="microsoftBtn">
+    <svg width="20" height="20" viewBox="0 0 23 23"><path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/></svg>
+    <span id="microsoftBtnText">Continue with Microsoft</span>
+  </button>
+</div>
+
+<p class="text-center mt-4 mb-0">
+  Don't have an account? <a href="${basePath}/auth/register" class="text-decoration-none fw-medium">Sign up</a>
+</p>
+
+`,
+  scripts: `
+<script>
+  (function() {
+    var basePath = '${basePath}';
+
+    // Fill demo login credentials
+    function fillLogin(email, password) {
+      document.getElementById('email').value = email;
+      document.getElementById('password').value = password;
+      showAlert('Credentials filled! Click Sign In to continue.', 'info');
+    }
+
+    // Toggle password visibility
+    function togglePassword() {
+      var field = document.getElementById('password');
+      var icon = document.getElementById('passwordToggleIcon');
+      if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.replace('bi-eye', 'bi-eye-slash');
+      } else {
+        field.type = 'password';
+        icon.classList.replace('bi-eye-slash', 'bi-eye');
+      }
+    }
+
+    // Show alert
+    function showAlert(message, type) {
+      type = type || 'danger';
+      var container = document.getElementById('alertContainer');
+      container.innerHTML = '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' +
+        message +
+        '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+        '</div>';
+    }
+
+    // Wait for DOM to be ready
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize tooltips
+      var tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      tooltipTriggerList.forEach(function(el) { new bootstrap.Tooltip(el); });
+
+      // Demo login buttons
+      document.getElementById('demoAdminBtn').addEventListener('click', function() {
+        fillLogin('john@elitewriting.com', 'Demo123!');
+      });
+      document.getElementById('demoManagerBtn').addEventListener('click', function() {
+        fillLogin('sarah@elitewriting.com', 'Demo123!');
+      });
+      document.getElementById('demoSuperBtn').addEventListener('click', function() {
+        fillLogin('admin@apexsalesai.com', 'Admin123!');
+      });
+
+      // Password toggle
+      document.getElementById('passwordToggle').addEventListener('click', function() {
+        togglePassword();
+      });
+
+      // OAuth buttons
+      document.getElementById('googleBtn').addEventListener('click', function() {
+        window.location.href = basePath + '/auth/google';
+      });
+      document.getElementById('microsoftBtn').addEventListener('click', function() {
+        window.location.href = basePath + '/auth/microsoft';
+      });
+    });
+  })();
+</script>
+`
+}) %>

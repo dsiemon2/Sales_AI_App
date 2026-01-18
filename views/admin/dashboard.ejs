@@ -1,0 +1,167 @@
+<%- include('../layouts/admin', { body: `
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="card stats-card">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="stats-icon bg-primary bg-opacity-10 text-primary">
+          <i class="bi bi-chat-left-text"></i>
+        </div>
+        <div>
+          <div class="text-muted small">Total Sessions</div>
+          <div class="h3 mb-0 fw-bold">${stats.totalSessions.toLocaleString()}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card stats-card">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="stats-icon bg-success bg-opacity-10 text-success">
+          <i class="bi bi-check-circle"></i>
+        </div>
+        <div>
+          <div class="text-muted small">Successful Sales</div>
+          <div class="h3 mb-0 fw-bold">${stats.successfulSessions.toLocaleString()}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card stats-card">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="stats-icon bg-warning bg-opacity-10 text-warning">
+          <i class="bi bi-graph-up-arrow"></i>
+        </div>
+        <div>
+          <div class="text-muted small">Conversion Rate</div>
+          <div class="h3 mb-0 fw-bold">${stats.conversionRate}%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Recent Sessions -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Sessions</h5>
+        <a href="${basePath}/admin/sessions" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>User</th>
+                <th>Started</th>
+                <th>Phase</th>
+                <th>Outcome</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${recentSessions.length > 0 ? recentSessions.map(session => `
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 0.75rem;">
+                        ${session.user ? session.user.firstName.charAt(0) + session.user.lastName.charAt(0) : 'AN'}
+                      </div>
+                      <span>${session.user ? session.user.firstName + ' ' + session.user.lastName : session.userName || 'Anonymous'}</span>
+                    </div>
+                  </td>
+                  <td class="text-muted">${new Date(session.startedAt).toLocaleString()}</td>
+                  <td><span class="badge bg-secondary">${session.currentPhase}</span></td>
+                  <td>
+                    <span class="badge ${session.outcome === 'sale_made' ? 'bg-success' : session.outcome === 'no_sale' ? 'bg-danger' : session.outcome === 'abandoned' ? 'bg-warning' : 'bg-info'}">
+                      ${session.outcome.replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td>
+                    <a href="${basePath}/admin/sessions/${session.id}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="View details">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                  </td>
+                </tr>
+              `).join('') : `
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">No sessions yet</td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Techniques -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-trophy me-2"></i>Top Techniques</h5>
+      </div>
+      <div class="card-body">
+        ${topTechniques.length > 0 ? topTechniques.map((tech, i) => `
+          <div class="d-flex justify-content-between align-items-center ${i < topTechniques.length - 1 ? 'mb-3 pb-3 border-bottom' : ''}">
+            <div>
+              <div class="fw-medium">${tech.name}</div>
+              <div class="text-muted small">${tech.usageCount} uses</div>
+            </div>
+            <div class="text-end">
+              <div class="fw-bold text-success">${(tech.successRate * 100).toFixed(1)}%</div>
+              <div class="text-muted small">success</div>
+            </div>
+          </div>
+        `).join('') : `
+          <p class="text-muted text-center mb-0">No technique data yet</p>
+        `}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-4 mt-2">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Quick Actions</h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <a href="${basePath}/admin/products" class="btn btn-outline-primary w-100 py-3">
+              <i class="bi bi-box-seam d-block mb-2" style="font-size: 1.5rem;"></i>
+              Manage Products
+            </a>
+          </div>
+          <div class="col-md-3">
+            <a href="${basePath}/admin/techniques" class="btn btn-outline-primary w-100 py-3">
+              <i class="bi bi-lightbulb d-block mb-2" style="font-size: 1.5rem;"></i>
+              Edit Techniques
+            </a>
+          </div>
+          <div class="col-md-3">
+            <a href="${basePath}/admin/ai-config" class="btn btn-outline-primary w-100 py-3">
+              <i class="bi bi-robot d-block mb-2" style="font-size: 1.5rem;"></i>
+              AI Settings
+            </a>
+          </div>
+          <div class="col-md-3">
+            <a href="${basePath}/admin/analytics" class="btn btn-outline-primary w-100 py-3">
+              <i class="bi bi-graph-up d-block mb-2" style="font-size: 1.5rem;"></i>
+              View Analytics
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+` }) %>

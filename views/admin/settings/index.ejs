@@ -1,0 +1,701 @@
+<%- include('../../layouts/admin', { body: `
+
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-gear me-2"></i>Settings</h1>
+      <p class="text-muted mb-0">Configure platform and company settings</p>
+    </div>
+  </div>
+
+  <!-- Settings Tabs -->
+  <ul class="nav nav-tabs mb-4" role="tablist">
+    <li class="nav-item">
+      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#siteInfoTab">
+        <i class="bi bi-info-circle me-1"></i> Site Info
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#brandingTab">
+        <i class="bi bi-palette me-1"></i> Branding
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#emailTab">
+        <i class="bi bi-envelope me-1"></i> Email
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#securityTab">
+        <i class="bi bi-shield-lock me-1"></i> Security
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#notificationsTab">
+        <i class="bi bi-bell me-1"></i> Notifications
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <!-- Site Info Tab -->
+    <div class="tab-pane fade show active" id="siteInfoTab">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Site Information</h5>
+        </div>
+        <div class="card-body">
+          <form id="siteInfoForm">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Site Name</label>
+                <input type="text" name="siteName" class="form-control" value="${siteInfo?.siteName || 'Apex Sales Training AI'}" placeholder="Apex Sales Training AI">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Tagline</label>
+                <input type="text" name="tagline" class="form-control" value="${siteInfo?.tagline || ''}" placeholder="AI-Powered Sales Training">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" rows="3" placeholder="Brief description of the platform...">${siteInfo?.description || ''}</textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Support Email</label>
+                <input type="email" name="supportEmail" class="form-control" value="${siteInfo?.supportEmail || ''}" placeholder="support@example.com">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Support Phone</label>
+                <input type="tel" name="supportPhone" class="form-control" value="${siteInfo?.supportPhone || ''}" placeholder="+1 (555) 123-4567">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Website URL</label>
+                <input type="url" name="websiteUrl" class="form-control" value="${siteInfo?.websiteUrl || ''}" placeholder="https://www.example.com">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Default Timezone</label>
+                <select name="timezone" class="form-select">
+                  <option value="America/New_York" ${siteInfo?.timezone === 'America/New_York' || !siteInfo?.timezone ? 'selected' : ''}>Eastern Time (ET)</option>
+                  <option value="America/Chicago" ${siteInfo?.timezone === 'America/Chicago' ? 'selected' : ''}>Central Time (CT)</option>
+                  <option value="America/Denver" ${siteInfo?.timezone === 'America/Denver' ? 'selected' : ''}>Mountain Time (MT)</option>
+                  <option value="America/Los_Angeles" ${siteInfo?.timezone === 'America/Los_Angeles' ? 'selected' : ''}>Pacific Time (PT)</option>
+                  <option value="UTC" ${siteInfo?.timezone === 'UTC' ? 'selected' : ''}>UTC</option>
+                  <option value="Europe/London" ${siteInfo?.timezone === 'Europe/London' ? 'selected' : ''}>London (GMT/BST)</option>
+                  <option value="Europe/Paris" ${siteInfo?.timezone === 'Europe/Paris' ? 'selected' : ''}>Paris (CET/CEST)</option>
+                  <option value="Asia/Tokyo" ${siteInfo?.timezone === 'Asia/Tokyo' ? 'selected' : ''}>Tokyo (JST)</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Address</label>
+                <textarea name="address" class="form-control" rows="2" placeholder="Company address...">${siteInfo?.address || ''}</textarea>
+              </div>
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-lg me-1"></i> Save Site Info
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Branding Tab -->
+    <div class="tab-pane fade" id="brandingTab">
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Industry Branding</h5>
+          ${isSuperAdmin ? '<div class="d-flex align-items-center gap-2"><label class="form-label mb-0 me-2">Industry:</label><select id="brandingIndustryFilter" class="form-select form-select-sm" style="width: auto;"><option value="">-- Select Industry --</option></select></div>' : ''}
+        </div>
+        <div class="card-body">
+          <div id="brandingContent">
+            <div class="text-center text-muted py-5">
+              <i class="bi bi-palette fs-1 d-block mb-2"></i>
+              Select an industry to configure its branding
+            </div>
+          </div>
+          <form id="brandingForm" style="display: none;">
+            <input type="hidden" name="industryId" id="brandingIndustryId">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Logo URL</label>
+                <input type="url" name="logoUrl" id="brandingLogoUrl" class="form-control" placeholder="https://example.com/logo.png">
+                <div id="logoPreview" class="mt-2"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Favicon URL</label>
+                <input type="url" name="faviconUrl" id="brandingFaviconUrl" class="form-control" placeholder="https://example.com/favicon.ico">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Primary Color</label>
+                <div class="input-group">
+                  <input type="color" name="primaryColor" id="brandingPrimaryColor" class="form-control form-control-color" value="#2563eb">
+                  <input type="text" class="form-control color-text" id="brandingPrimaryColorText" value="#2563eb" readonly>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Secondary Color</label>
+                <div class="input-group">
+                  <input type="color" name="secondaryColor" id="brandingSecondaryColor" class="form-control form-control-color" value="#1d4ed8">
+                  <input type="text" class="form-control color-text" id="brandingSecondaryColorText" value="#1d4ed8" readonly>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Accent Color</label>
+                <div class="input-group">
+                  <input type="color" name="accentColor" id="brandingAccentColor" class="form-control form-control-color" value="#3b82f6">
+                  <input type="text" class="form-control color-text" id="brandingAccentColorText" value="#3b82f6" readonly>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Heading Font</label>
+                <select name="headingFont" id="brandingHeadingFont" class="form-select">
+                  <option value="Inter">Inter</option>
+                  <option value="Roboto">Roboto</option>
+                  <option value="Open Sans">Open Sans</option>
+                  <option value="Poppins">Poppins</option>
+                  <option value="Montserrat">Montserrat</option>
+                  <option value="Lato">Lato</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Body Font</label>
+                <select name="bodyFont" id="brandingBodyFont" class="form-select">
+                  <option value="Inter">Inter</option>
+                  <option value="Roboto">Roboto</option>
+                  <option value="Open Sans">Open Sans</option>
+                  <option value="Poppins">Poppins</option>
+                  <option value="Montserrat">Montserrat</option>
+                  <option value="Lato">Lato</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Custom CSS</label>
+                <textarea name="customCss" id="brandingCustomCss" class="form-control font-monospace" rows="4" placeholder="/* Custom CSS overrides */"></textarea>
+              </div>
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-lg me-1"></i> Save Branding
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Email Tab -->
+    <div class="tab-pane fade" id="emailTab">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Email Settings (SMTP)</h5>
+        </div>
+        <div class="card-body">
+          <form id="emailForm">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">SMTP Host</label>
+                <input type="text" name="smtpHost" class="form-control" value="${emailSettings?.smtpHost || ''}" placeholder="smtp.example.com">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">SMTP Port</label>
+                <input type="number" name="smtpPort" class="form-control" value="${emailSettings?.smtpPort || 587}" placeholder="587">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Encryption</label>
+                <select name="smtpEncryption" class="form-select">
+                  <option value="tls" ${emailSettings?.smtpEncryption === 'tls' || !emailSettings?.smtpEncryption ? 'selected' : ''}>TLS</option>
+                  <option value="ssl" ${emailSettings?.smtpEncryption === 'ssl' ? 'selected' : ''}>SSL</option>
+                  <option value="none" ${emailSettings?.smtpEncryption === 'none' ? 'selected' : ''}>None</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">SMTP Username</label>
+                <input type="text" name="smtpUsername" class="form-control" value="${emailSettings?.smtpUsername || ''}" placeholder="username@example.com">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">SMTP Password</label>
+                <input type="password" name="smtpPassword" class="form-control" placeholder="••••••••">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">From Email</label>
+                <input type="email" name="fromEmail" class="form-control" value="${emailSettings?.fromEmail || ''}" placeholder="noreply@example.com">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">From Name</label>
+                <input type="text" name="fromName" class="form-control" value="${emailSettings?.fromName || ''}" placeholder="Apex Sales AI">
+              </div>
+
+              <div class="col-12">
+                <hr>
+                <h6>Email Templates</h6>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="welcomeEmailEnabled" class="form-check-input" id="welcomeEmailEnabled" ${emailSettings?.welcomeEmailEnabled !== false ? 'checked' : ''}>
+                  <label class="form-check-label" for="welcomeEmailEnabled">Send Welcome Email</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="passwordResetEnabled" class="form-check-input" id="passwordResetEnabled" ${emailSettings?.passwordResetEnabled !== false ? 'checked' : ''}>
+                  <label class="form-check-label" for="passwordResetEnabled">Password Reset Email</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="sessionSummaryEnabled" class="form-check-input" id="sessionSummaryEnabled" ${emailSettings?.sessionSummaryEnabled ? 'checked' : ''}>
+                  <label class="form-check-label" for="sessionSummaryEnabled">Session Summary Email</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="weeklyReportEnabled" class="form-check-input" id="weeklyReportEnabled" ${emailSettings?.weeklyReportEnabled ? 'checked' : ''}>
+                  <label class="form-check-label" for="weeklyReportEnabled">Weekly Report Email</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary me-2">
+                  <i class="bi bi-check-lg me-1"></i> Save Email Settings
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="testEmail()">
+                  <i class="bi bi-send me-1"></i> Send Test Email
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Security Tab -->
+    <div class="tab-pane fade" id="securityTab">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Security Settings</h5>
+        </div>
+        <div class="card-body">
+          <form id="securityForm">
+            <div class="row g-3">
+              <div class="col-12">
+                <h6>Authentication</h6>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="twoFactorEnabled" class="form-check-input" id="twoFactorEnabled" ${securitySettings?.twoFactorEnabled ? 'checked' : ''}>
+                  <label class="form-check-label" for="twoFactorEnabled">
+                    <strong>Two-Factor Authentication (2FA)</strong>
+                    <small class="text-muted d-block">Require 2FA for admin users</small>
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="oauthEnabled" class="form-check-input" id="oauthEnabled" ${securitySettings?.oauthEnabled !== false ? 'checked' : ''}>
+                  <label class="form-check-label" for="oauthEnabled">
+                    <strong>OAuth Login</strong>
+                    <small class="text-muted d-block">Allow Google/Microsoft login</small>
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Session Timeout (minutes)</label>
+                <input type="number" name="sessionTimeout" class="form-control" value="${securitySettings?.sessionTimeout || 30}" min="5" max="1440">
+                <small class="text-muted">Auto-logout after inactivity (5-1440 min)</small>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Max Login Attempts</label>
+                <input type="number" name="maxLoginAttempts" class="form-control" value="${securitySettings?.maxLoginAttempts || 5}" min="3" max="10">
+                <small class="text-muted">Before temporary lockout</small>
+              </div>
+
+              <div class="col-12">
+                <hr>
+                <h6>Password Requirements</h6>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Minimum Password Length</label>
+                <input type="number" name="minPasswordLength" class="form-control" value="${securitySettings?.minPasswordLength || 8}" min="6" max="32">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Password Expiry (days)</label>
+                <input type="number" name="passwordExpiryDays" class="form-control" value="${securitySettings?.passwordExpiryDays || 0}" min="0" max="365">
+                <small class="text-muted">0 = no expiry</small>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="requireUppercase" class="form-check-input" id="requireUppercase" ${securitySettings?.requireUppercase !== false ? 'checked' : ''}>
+                  <label class="form-check-label" for="requireUppercase">Require Uppercase Letter</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="requireNumber" class="form-check-input" id="requireNumber" ${securitySettings?.requireNumber !== false ? 'checked' : ''}>
+                  <label class="form-check-label" for="requireNumber">Require Number</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="requireSpecialChar" class="form-check-input" id="requireSpecialChar" ${securitySettings?.requireSpecialChar ? 'checked' : ''}>
+                  <label class="form-check-label" for="requireSpecialChar">Require Special Character</label>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <hr>
+                <h6>IP Restrictions</h6>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="ipWhitelistEnabled" class="form-check-input" id="ipWhitelistEnabled" ${securitySettings?.ipWhitelistEnabled ? 'checked' : ''}>
+                  <label class="form-check-label" for="ipWhitelistEnabled">Enable IP Whitelist</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Allowed IP Addresses</label>
+                <textarea name="allowedIps" class="form-control font-monospace" rows="3" placeholder="One IP address per line...">${securitySettings?.allowedIps || ''}</textarea>
+                <small class="text-muted">Leave empty to allow all IPs</small>
+              </div>
+
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-lg me-1"></i> Save Security Settings
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications Tab -->
+    <div class="tab-pane fade" id="notificationsTab">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Notification Settings</h5>
+        </div>
+        <div class="card-body">
+          <form id="notificationsForm">
+            <div class="row g-3">
+              <div class="col-12">
+                <h6>Notification Channels</h6>
+              </div>
+              <div class="col-md-4">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="emailNotifications" class="form-check-input" id="emailNotifications" ${notificationSettings?.emailNotifications !== false ? 'checked' : ''}>
+                  <label class="form-check-label" for="emailNotifications">
+                    <i class="bi bi-envelope me-1"></i> Email Notifications
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="smsNotifications" class="form-check-input" id="smsNotifications" ${notificationSettings?.smsNotifications ? 'checked' : ''}>
+                  <label class="form-check-label" for="smsNotifications">
+                    <i class="bi bi-phone me-1"></i> SMS Notifications
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="pushNotifications" class="form-check-input" id="pushNotifications" ${notificationSettings?.pushNotifications ? 'checked' : ''}>
+                  <label class="form-check-label" for="pushNotifications">
+                    <i class="bi bi-bell me-1"></i> Push Notifications
+                  </label>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <hr>
+                <h6>Admin Notifications</h6>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="notifyNewUser" class="form-check-input" id="notifyNewUser" ${notificationSettings?.notifyNewUser !== false ? 'checked' : ''}>
+                  <label class="form-check-label" for="notifyNewUser">New User Registration</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="notifyNewCompany" class="form-check-input" id="notifyNewCompany" ${notificationSettings?.notifyNewCompany !== false ? 'checked' : ''}>
+                  <label class="form-check-label" for="notifyNewCompany">New Company Created</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="notifyPayment" class="form-check-input" id="notifyPayment" ${notificationSettings?.notifyPayment !== false ? 'checked' : ''}>
+                  <label class="form-check-label" for="notifyPayment">Payment Received</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="notifyError" class="form-check-input" id="notifyError" ${notificationSettings?.notifyError ? 'checked' : ''}>
+                  <label class="form-check-label" for="notifyError">System Errors</label>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <hr>
+                <h6>User Notifications</h6>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="notifySessionComplete" class="form-check-input" id="notifySessionComplete" ${notificationSettings?.notifySessionComplete ? 'checked' : ''}>
+                  <label class="form-check-label" for="notifySessionComplete">Training Session Complete</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="notifyAchievement" class="form-check-input" id="notifyAchievement" ${notificationSettings?.notifyAchievement !== false ? 'checked' : ''}>
+                  <label class="form-check-label" for="notifyAchievement">Achievement Unlocked</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="notifyWeeklyReport" class="form-check-input" id="notifyWeeklyReport" ${notificationSettings?.notifyWeeklyReport ? 'checked' : ''}>
+                  <label class="form-check-label" for="notifyWeeklyReport">Weekly Progress Report</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input type="checkbox" name="notifyReminder" class="form-check-input" id="notifyReminder" ${notificationSettings?.notifyReminder ? 'checked' : ''}>
+                  <label class="form-check-label" for="notifyReminder">Training Reminders</label>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-lg me-1"></i> Save Notification Settings
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const basePath = '${basePath}';
+  const token = '${token || ''}';
+  const isSuperAdmin = ${isSuperAdmin || false};
+  const industries = ${JSON.stringify(industries || [])};
+  const brandings = ${JSON.stringify(brandings || [])};
+
+  // Populate industry dropdown for branding
+  function populateBrandingIndustries() {
+    if (!isSuperAdmin) return;
+
+    const select = document.getElementById('brandingIndustryFilter');
+    if (!select) return;
+
+    industries.forEach(ind => {
+      const option = document.createElement('option');
+      option.value = ind.id;
+      option.textContent = ind.name;
+      select.appendChild(option);
+    });
+
+    select.addEventListener('change', loadBrandingForIndustry);
+  }
+
+  function loadBrandingForIndustry() {
+    const industryId = document.getElementById('brandingIndustryFilter').value;
+
+    if (!industryId) {
+      document.getElementById('brandingContent').style.display = 'block';
+      document.getElementById('brandingForm').style.display = 'none';
+      return;
+    }
+
+    document.getElementById('brandingContent').style.display = 'none';
+    document.getElementById('brandingForm').style.display = 'block';
+
+    // Find branding for this industry
+    const branding = brandings.find(b => b.industryId === industryId) || {};
+
+    document.getElementById('brandingIndustryId').value = industryId;
+    document.getElementById('brandingLogoUrl').value = branding.logoUrl || '';
+    document.getElementById('brandingFaviconUrl').value = branding.faviconUrl || '';
+    document.getElementById('brandingPrimaryColor').value = branding.primaryColor || '#2563eb';
+    document.getElementById('brandingPrimaryColorText').value = branding.primaryColor || '#2563eb';
+    document.getElementById('brandingSecondaryColor').value = branding.secondaryColor || '#1d4ed8';
+    document.getElementById('brandingSecondaryColorText').value = branding.secondaryColor || '#1d4ed8';
+    document.getElementById('brandingAccentColor').value = branding.accentColor || '#3b82f6';
+    document.getElementById('brandingAccentColorText').value = branding.accentColor || '#3b82f6';
+    document.getElementById('brandingHeadingFont').value = branding.headingFont || 'Inter';
+    document.getElementById('brandingBodyFont').value = branding.bodyFont || 'Inter';
+    document.getElementById('brandingCustomCss').value = branding.customCss || '';
+
+    // Update logo preview
+    updateLogoPreview();
+  }
+
+  function updateLogoPreview() {
+    const logoUrl = document.getElementById('brandingLogoUrl').value;
+    const preview = document.getElementById('logoPreview');
+    if (logoUrl) {
+      preview.innerHTML = '<img src="' + logoUrl + '" alt="Logo Preview" style="max-height: 50px; max-width: 200px;" onerror="this.style.display=\\'none\\'">';
+    } else {
+      preview.innerHTML = '';
+    }
+  }
+
+  // Color picker sync
+  document.querySelectorAll('input[type="color"]').forEach(colorInput => {
+    colorInput.addEventListener('input', (e) => {
+      const textInput = e.target.parentElement.querySelector('.color-text, [readonly]');
+      if (textInput) textInput.value = e.target.value;
+    });
+  });
+
+  // Logo URL preview
+  document.getElementById('brandingLogoUrl')?.addEventListener('input', updateLogoPreview);
+
+  // Form submissions
+  document.getElementById('siteInfoForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+
+    try {
+      const res = await fetch(basePath + '/admin/settings/site-info?token=' + token, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        alert('Site info saved successfully');
+      } else {
+        alert((await res.json()).error || 'Failed to save');
+      }
+    } catch (err) {
+      alert('Error saving site info');
+    }
+  });
+
+  document.getElementById('brandingForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+
+    try {
+      const res = await fetch(basePath + '/admin/settings/branding?token=' + token, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        alert('Branding saved successfully');
+      } else {
+        alert((await res.json()).error || 'Failed to save');
+      }
+    } catch (err) {
+      alert('Error saving branding');
+    }
+  });
+
+  document.getElementById('emailForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const data = Object.fromEntries(new FormData(form));
+    data.welcomeEmailEnabled = form.welcomeEmailEnabled.checked;
+    data.passwordResetEnabled = form.passwordResetEnabled.checked;
+    data.sessionSummaryEnabled = form.sessionSummaryEnabled.checked;
+    data.weeklyReportEnabled = form.weeklyReportEnabled.checked;
+
+    try {
+      const res = await fetch(basePath + '/admin/settings/email?token=' + token, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        alert('Email settings saved successfully');
+      } else {
+        alert((await res.json()).error || 'Failed to save');
+      }
+    } catch (err) {
+      alert('Error saving email settings');
+    }
+  });
+
+  document.getElementById('securityForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const data = Object.fromEntries(new FormData(form));
+    data.twoFactorEnabled = form.twoFactorEnabled.checked;
+    data.oauthEnabled = form.oauthEnabled.checked;
+    data.requireUppercase = form.requireUppercase.checked;
+    data.requireNumber = form.requireNumber.checked;
+    data.requireSpecialChar = form.requireSpecialChar.checked;
+    data.ipWhitelistEnabled = form.ipWhitelistEnabled.checked;
+
+    try {
+      const res = await fetch(basePath + '/admin/settings/security?token=' + token, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        alert('Security settings saved successfully');
+      } else {
+        alert((await res.json()).error || 'Failed to save');
+      }
+    } catch (err) {
+      alert('Error saving security settings');
+    }
+  });
+
+  document.getElementById('notificationsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const data = {};
+
+    // Get all checkboxes
+    form.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      data[cb.name] = cb.checked;
+    });
+
+    try {
+      const res = await fetch(basePath + '/admin/settings/notifications?token=' + token, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        alert('Notification settings saved successfully');
+      } else {
+        alert((await res.json()).error || 'Failed to save');
+      }
+    } catch (err) {
+      alert('Error saving notification settings');
+    }
+  });
+
+  function testEmail() {
+    const email = prompt('Enter email address to send test email:');
+    if (!email) return;
+
+    fetch(basePath + '/admin/settings/test-email?token=' + token, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        alert('Test email sent successfully!');
+      } else {
+        alert(data.error || 'Failed to send test email');
+      }
+    })
+    .catch(() => alert('Error sending test email'));
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    populateBrandingIndustries();
+  });
+</script>
+
+` }) %>
