@@ -178,6 +178,11 @@ export function getMenuForRole(role: Role, industryCode?: string): MenuItem[] {
     { id: 'payments', label: 'Transactions', icon: 'bi-receipt', path: '/admin/payments', section: 'Billing', minRole: ROLES.COMPANY_ADMIN },
     { id: 'payment-configurations', label: 'Payment Gateways', icon: 'bi-credit-card', path: '/admin/payment-configurations', section: 'Billing', minRole: ROLES.COMPANY_ADMIN },
 
+    // Account
+    { id: 'account', label: 'Account Settings', icon: 'bi-shield-check', path: '/admin/account', section: 'Account', minRole: ROLES.TRAINEE },
+    { id: 'my-subscription', label: 'My Subscription', icon: 'bi-person-badge', path: '/admin/my-subscription', section: 'Account', minRole: ROLES.COMPANY_ADMIN },
+    { id: 'pricing', label: 'Pricing Plans', icon: 'bi-tags', path: '/admin/pricing', section: 'Account', minRole: ROLES.COMPANY_ADMIN },
+
     // System
     { id: 'settings', label: 'Settings', icon: 'bi-gear', path: '/admin/settings', section: 'System', minRole: ROLES.COMPANY_ADMIN },
     { id: 'features', label: 'Features', icon: 'bi-toggles', path: '/admin/features', section: 'System', minRole: ROLES.COMPANY_ADMIN },

@@ -1,0 +1,145 @@
+<%- include('../../layouts/admin', { body: `
+
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0"><i class="bi bi-shield-check me-2"></i>Account Settings</h1>
+      <p class="text-muted mb-0">Manage your personal information and security settings</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <!-- Personal Information -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-person me-2"></i>Personal Information</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-sm-3 text-muted">Name</div>
+            <div class="col-sm-7" id="displayName">${user?.firstName || ''} ${user?.lastName || ''}</div>
+            <div class="col-sm-2 text-end"><button class="btn btn-sm btn-outline-primary" onclick="showEditModal('name')"><i class="bi bi-pencil"></i></button></div>
+          </div>
+          <hr>
+          <div class="row mb-3">
+            <div class="col-sm-3 text-muted">Email</div>
+            <div class="col-sm-7" id="displayEmail">${user?.email || 'Not set'}</div>
+            <div class="col-sm-2 text-end"><button class="btn btn-sm btn-outline-primary" onclick="showEditModal('email')"><i class="bi bi-pencil"></i></button></div>
+          </div>
+          <hr>
+          <div class="row">
+            <div class="col-sm-3 text-muted">Phone</div>
+            <div class="col-sm-7" id="displayPhone">${user?.phone || 'Not set'}</div>
+            <div class="col-sm-2 text-end"><button class="btn btn-sm btn-outline-primary" onclick="showEditModal('phone')"><i class="bi bi-pencil"></i></button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-key me-2"></i>Password</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-sm-3 text-muted">Password</div>
+            <div class="col-sm-7 text-muted">Last changed: Unknown</div>
+            <div class="col-sm-2 text-end"><button class="btn btn-sm btn-outline-warning" onclick="showEditModal('password')"><i class="bi bi-key"></i> Change</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Two-Factor Authentication -->
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-shield-lock me-2"></i>Two-Factor Authentication</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-sm-3 text-muted">Status</div>
+            <div class="col-sm-7"><span class="badge bg-secondary">Not Enabled</span></div>
+            <div class="col-sm-2 text-end"><button class="btn btn-sm btn-outline-success"><i class="bi bi-shield-plus"></i> Enable</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-question-circle me-2"></i>Need Help?</h5>
+        </div>
+        <div class="card-body">
+          <p class="text-muted">Contact our support team for assistance with your account.</p>
+          <a href="mailto:support@apexsales.ai" class="btn btn-outline-primary w-100"><i class="bi bi-envelope me-1"></i> Contact Support</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editModalTitle">Edit</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="editModalBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveEdit()"><i class="bi bi-check-lg me-1"></i> Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const basePath = '${basePath}';
+  let editModal, currentEditField = '';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    editModal = new bootstrap.Modal(document.getElementById('editModal'));
+  });
+
+  function showEditModal(field) {
+    currentEditField = field;
+    const title = document.getElementById('editModalTitle');
+    const body = document.getElementById('editModalBody');
+    const templates = {
+      name: { title: 'Edit Name', body: '<div class="mb-3"><label class="form-label">First Name</label><input type="text" class="form-control" id="editFirstName" value="${user?.firstName || ''}"></div><div class="mb-3"><label class="form-label">Last Name</label><input type="text" class="form-control" id="editLastName" value="${user?.lastName || ''}"></div>' },
+      email: { title: 'Change Email', body: '<div class="mb-3"><label class="form-label">New Email</label><input type="email" class="form-control" id="editValue"></div><div class="mb-3"><label class="form-label">Current Password</label><input type="password" class="form-control" id="editPassword"></div>' },
+      phone: { title: 'Edit Phone', body: '<div class="mb-3"><label class="form-label">Phone Number</label><input type="tel" class="form-control" id="editValue" value="${user?.phone || ''}"></div>' },
+      password: { title: 'Change Password', body: '<div class="mb-3"><label class="form-label">Current Password</label><input type="password" class="form-control" id="currentPassword"></div><div class="mb-3"><label class="form-label">New Password</label><input type="password" class="form-control" id="newPassword"></div><div class="mb-3"><label class="form-label">Confirm New Password</label><input type="password" class="form-control" id="confirmPassword"></div>' }
+    };
+    title.textContent = templates[field].title;
+    body.innerHTML = templates[field].body;
+    editModal.show();
+  }
+
+  async function saveEdit() {
+    let endpoint = basePath + '/admin/account/api/' + currentEditField;
+    let body = {};
+    if (currentEditField === 'name') {
+      body = { firstName: document.getElementById('editFirstName').value, lastName: document.getElementById('editLastName').value };
+    } else if (currentEditField === 'email') {
+      body = { email: document.getElementById('editValue').value, password: document.getElementById('editPassword').value };
+    } else if (currentEditField === 'phone') {
+      body = { phone: document.getElementById('editValue').value };
+    } else if (currentEditField === 'password') {
+      const newPass = document.getElementById('newPassword').value;
+      if (newPass !== document.getElementById('confirmPassword').value) { alert('Passwords do not match'); return; }
+      body = { currentPassword: document.getElementById('currentPassword').value, newPassword: newPass };
+    }
+    try {
+      const res = await fetch(endpoint, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const data = await res.json();
+      if (data.success) { editModal.hide(); location.reload(); }
+      else alert('Error: ' + (data.error || 'Failed to update'));
+    } catch (err) { alert('Error updating: ' + err.message); }
+  }
+</script>
+
+` }) %>

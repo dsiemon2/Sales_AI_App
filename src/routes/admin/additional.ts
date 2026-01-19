@@ -1060,4 +1060,179 @@ router.get('/banners', requirePermission('MANAGE_PLATFORM'), asyncHandler(async 
   });
 }));
 
+// ============================================
+// ACCOUNT SETTINGS
+// ============================================
+
+router.get('/account', asyncHandler(async (req: Request, res: Response) => {
+  res.render('admin/account/index', {
+    title: 'Account Settings',
+    active: 'account'
+  });
+}));
+
+router.put('/account/api/name', asyncHandler(async (req: Request, res: Response) => {
+  const { firstName, lastName } = req.body;
+  if (!req.user) {
+    res.status(401).json({ success: false, error: 'Not authenticated' });
+    return;
+  }
+  await prisma.user.update({
+    where: { id: req.user.id },
+    data: { firstName, lastName }
+  });
+  res.json({ success: true });
+}));
+
+router.put('/account/api/email', asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body;
+  if (!req.user) {
+    res.status(401).json({ success: false, error: 'Not authenticated' });
+    return;
+  }
+  await prisma.user.update({
+    where: { id: req.user.id },
+    data: { email }
+  });
+  res.json({ success: true });
+}));
+
+router.put('/account/api/phone', asyncHandler(async (req: Request, res: Response) => {
+  const { phone } = req.body;
+  if (!req.user) {
+    res.status(401).json({ success: false, error: 'Not authenticated' });
+    return;
+  }
+  await prisma.user.update({
+    where: { id: req.user.id },
+    data: { phone }
+  });
+  res.json({ success: true });
+}));
+
+router.put('/account/api/password', asyncHandler(async (req: Request, res: Response) => {
+  const { newPassword } = req.body;
+  if (!req.user) {
+    res.status(401).json({ success: false, error: 'Not authenticated' });
+    return;
+  }
+  // In production, verify current password and hash new one
+  await prisma.user.update({
+    where: { id: req.user.id },
+    data: { password: newPassword }
+  });
+  res.json({ success: true });
+}));
+
+// ============================================
+// MY SUBSCRIPTION
+// ============================================
+
+router.get('/my-subscription', requirePermission('VIEW_SUBSCRIPTION'), asyncHandler(async (req: Request, res: Response) => {
+  res.render('admin/my-subscription/index', {
+    title: 'My Subscription',
+    active: 'my-subscription'
+  });
+}));
+
+router.get('/my-subscription/api', asyncHandler(async (req: Request, res: Response) => {
+  const companyId = getTenantId(req);
+  if (!companyId) {
+    res.json({ success: false, error: 'No company selected' });
+    return;
+  }
+
+  const [subscription, company] = await Promise.all([
+    prisma.subscription.findUnique({ where: { companyId } }),
+    prisma.company.findUnique({ where: { id: companyId } })
+  ]);
+
+  res.json({ success: true, subscription, company });
+}));
+
+router.post('/my-subscription/api/cancel', asyncHandler(async (req: Request, res: Response) => {
+  const companyId = getTenantId(req);
+  if (!companyId) {
+    res.status(400).json({ success: false, error: 'No company selected' });
+    return;
+  }
+
+  await prisma.subscription.update({
+    where: { companyId },
+    data: { status: 'canceled', cancelAtPeriodEnd: true }
+  });
+
+  await prisma.company.update({
+    where: { id: companyId },
+    data: { subscriptionStatus: 'cancelled' }
+  });
+
+  res.json({ success: true });
+}));
+
+router.post('/my-subscription/api/resume', asyncHandler(async (req: Request, res: Response) => {
+  const companyId = getTenantId(req);
+  if (!companyId) {
+    res.status(400).json({ success: false, error: 'No company selected' });
+    return;
+  }
+
+  await prisma.subscription.update({
+    where: { companyId },
+    data: { status: 'active', cancelAtPeriodEnd: false }
+  });
+
+  await prisma.company.update({
+    where: { id: companyId },
+    data: { subscriptionStatus: 'active' }
+  });
+
+  res.json({ success: true });
+}));
+
+// ============================================
+// PRICING PLANS
+// ============================================
+
+router.get('/pricing', requirePermission('VIEW_SUBSCRIPTION'), asyncHandler(async (req: Request, res: Response) => {
+  res.render('admin/pricing/index', {
+    title: 'Pricing Plans',
+    active: 'pricing'
+  });
+}));
+
+router.post('/pricing/api/subscribe/:planId', asyncHandler(async (req: Request, res: Response) => {
+  const { planId } = req.params;
+  const companyId = getTenantId(req);
+
+  if (!companyId) {
+    res.status(400).json({ success: false, error: 'No company selected' });
+    return;
+  }
+
+  // In production, this would create a Stripe checkout session
+  // For now, just update the subscription tier
+  await prisma.company.update({
+    where: { id: companyId },
+    data: {
+      subscriptionTier: planId,
+      subscriptionStatus: planId === 'starter' ? 'active' : 'active'
+    }
+  });
+
+  const existingSub = await prisma.subscription.findUnique({ where: { companyId } });
+  if (existingSub) {
+    await prisma.subscription.update({
+      where: { companyId },
+      data: { tier: planId, status: 'active' }
+    });
+  } else {
+    await prisma.subscription.create({
+      data: { companyId, tier: planId, status: 'active' }
+    });
+  }
+
+  res.json({ success: true, message: 'Subscription updated' });
+}));
+
 export default router;

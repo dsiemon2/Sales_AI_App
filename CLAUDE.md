@@ -123,6 +123,12 @@ Sales_AI_App/
 - Trial codes can be activated at `/auth/trial`
 - Codes have: max uses, expiration date, days valid, optional industry lock
 - Successful activation redirects to registration with trial context
+- Admin management at `/admin/trial-codes`
+
+### Account & Subscription Management
+- **Account Settings:** `/admin/account` - Edit name, email, phone, password
+- **My Subscription:** `/admin/my-subscription` - View and manage subscription
+- **Pricing Plans:** `/admin/pricing` - View and upgrade subscription tiers
 
 ## Chat Interface (Voice-First Design)
 

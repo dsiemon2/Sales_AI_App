@@ -1,0 +1,171 @@
+<%- include('../../layouts/admin', { body: `
+
+<div class="container-fluid py-4">
+  <div class="text-center mb-5">
+    <h1 class="h2"><i class="bi bi-tags me-2"></i>Pricing Plans</h1>
+    <p class="text-muted">Choose the plan that fits your team's needs</p>
+  </div>
+
+  <div class="row g-4" id="pricingCards">
+    <div class="col-12 text-center">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .pricing-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 2rem;
+    height: 100%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+    display: flex;
+    flex-direction: column;
+  }
+  .pricing-card:hover {
+    transform: translateY(-4px);
+  }
+  .pricing-card.featured {
+    border: 2px solid var(--accent-color, #3b82f6);
+  }
+  .pricing-card.current {
+    border: 2px solid #28a745;
+  }
+  .featured-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent-color, #3b82f6);
+    color: #fff;
+    padding: 0.25rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+  }
+  .current-badge {
+    position: absolute;
+    top: -12px;
+    right: 20px;
+    background: #28a745;
+    color: #fff;
+    padding: 0.25rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+  }
+  .plan-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+  .plan-price {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--accent-color, #3b82f6);
+  }
+  .plan-price span {
+    font-size: 1rem;
+    font-weight: normal;
+    color: #666;
+  }
+  .feature-list {
+    list-style: none;
+    padding: 0;
+    flex-grow: 1;
+  }
+  .feature-list li {
+    padding: 0.5rem 0;
+    display: flex;
+    align-items: center;
+  }
+  .feature-list li i {
+    margin-right: 0.75rem;
+    color: var(--accent-color, #3b82f6);
+  }
+</style>
+
+<script>
+  const basePath = '${basePath}';
+  let currentTier = '${typeof tenant !== "undefined" && tenant?.subscriptionTier ? tenant.subscriptionTier : "starter"}';
+
+  const plans = [
+    {
+      id: 'starter',
+      name: 'Starter',
+      price: 0,
+      description: 'Perfect for trying out the platform',
+      features: ['Basic AI Training', 'Up to 5 Users', 'Email Support', '10 Sessions/month']
+    },
+    {
+      id: 'professional',
+      name: 'Professional',
+      price: 49.99,
+      description: 'For growing sales teams',
+      features: ['Advanced AI Training', 'Up to 25 Users', 'Priority Support', 'Custom Scenarios', 'Analytics Dashboard', 'Unlimited Sessions']
+    },
+    {
+      id: 'business',
+      name: 'Business',
+      price: 149.99,
+      description: 'For established organizations',
+      features: ['Enterprise AI Training', 'Unlimited Users', 'Dedicated Support', 'Custom Integrations', 'Advanced Analytics', 'API Access', 'Multi-team Management']
+    },
+    {
+      id: 'enterprise',
+      name: 'Enterprise',
+      price: null,
+      description: 'For large organizations',
+      features: ['Full Platform Access', 'Unlimited Everything', '24/7 Phone Support', 'White-label Options', 'Custom Development', 'SLA Guarantee', 'On-premise Option']
+    }
+  ];
+
+  document.addEventListener('DOMContentLoaded', renderPlans);
+
+  function renderPlans() {
+    const container = document.getElementById('pricingCards');
+    container.innerHTML = plans.map((plan, i) => {
+      const isFeatured = i === 1; // Professional is featured
+      const isCurrent = plan.id === currentTier;
+      return '<div class="col-lg-3 col-md-6">' +
+        '<div class="pricing-card ' + (isFeatured ? 'featured ' : '') + (isCurrent ? 'current' : '') + '" style="position: relative;">' +
+        (isFeatured ? '<div class="featured-badge">Most Popular</div>' : '') +
+        (isCurrent ? '<div class="current-badge"><i class="bi bi-check"></i> Current</div>' : '') +
+        '<div class="text-center mb-3">' +
+        '<div class="plan-name">' + plan.name + '</div>' +
+        '<div class="plan-price">' + (plan.price === null ? 'Contact Us' : plan.price === 0 ? 'Free' : '$' + plan.price.toFixed(2)) + (plan.price && plan.price > 0 ? '<span>/mo</span>' : '') + '</div>' +
+        '<p class="text-muted">' + plan.description + '</p>' +
+        '</div>' +
+        '<ul class="feature-list">' + plan.features.map(f => '<li><i class="bi bi-check-circle-fill"></i>' + f + '</li>').join('') + '</ul>' +
+        '<div class="mt-auto">' +
+        (isCurrent ? '<button class="btn btn-outline-secondary w-100" disabled>Current Plan</button>' :
+          plan.price === null ? '<a href="mailto:enterprise@apexsales.ai" class="btn btn-outline-primary w-100">Contact Sales</a>' :
+          '<button class="btn btn-' + (isFeatured ? 'primary' : 'outline-primary') + ' w-100" onclick="subscribeToPlan(\\'' + plan.id + '\\')">' + (plan.price === 0 ? 'Get Started' : 'Subscribe') + '</button>') +
+        '</div>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  async function subscribeToPlan(planId) {
+    try {
+      const res = await fetch(basePath + '/admin/pricing/api/subscribe/' + planId, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        if (data.checkout_url) {
+          window.location.href = data.checkout_url;
+        } else {
+          alert('Subscription updated!');
+          location.reload();
+        }
+      } else {
+        alert('Error: ' + (data.error || 'Failed to subscribe'));
+      }
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  }
+</script>
+
+` }) %>
