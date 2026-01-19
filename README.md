@@ -25,6 +25,9 @@ Multi-tenant SaaS platform for AI-powered sales training.
 ### Payment Gateways
 Stripe, PayPal, Square
 
+### SMS/Notifications
+- **Twilio** - SMS notifications for training completions and follow-ups
+
 ## Ports
 
 | Service | Port | Description |

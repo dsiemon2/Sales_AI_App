@@ -33,7 +33,10 @@
       "Bash(start \"\" \"C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe\")",
       "Bash(start \"\" \"%LOCALAPPDATA%\\\\Docker\\\\Docker Desktop.exe\")",
       "Bash(docker network:*)",
-      "Bash(docker stop:*)"
+      "Bash(docker stop:*)",
+      "Bash(npm run db:push:*)",
+      "Bash(Select-String -Pattern \"error|listen|Server|started\")",
+      "Bash(Select-Object -Last 30)"
     ]
   }
 }

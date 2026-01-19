@@ -979,58 +979,6 @@ model SmsSettings {
 }
 
 // ============================================
-// CALL TRANSFER SETTINGS
-// ============================================
-model CallTransferSettings {
-  id              String   @id @default(cuid())
-  companyId       String   @unique
-  mode            String   @default("blind")  // blind, warm, queue
-  holdMusic       String   @default("default")
-  timeout         Int      @default(30)
-  fallbackAction  String   @default("voicemail")
-  triggerSale     Boolean  @default(false)
-  triggerEscalate Boolean  @default(true)
-  triggerComplex  Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  destinations    TransferDestination[]
-
-  @@index([companyId])
-}
-
-model TransferDestination {
-  id                     String               @id @default(cuid())
-  callTransferSettingsId String
-  callTransferSettings   CallTransferSettings @relation(fields: [callTransferSettingsId], references: [id], onDelete: Cascade)
-  name                   String
-  number                 String
-  priority               Int                  @default(1)
-  isActive               Boolean              @default(true)
-  createdAt              DateTime             @default(now())
-  updatedAt              DateTime             @updatedAt
-
-  @@index([callTransferSettingsId])
-}
-
-// ============================================
-// DTMF MENU SETTINGS
-// ============================================
-model DtmfSettings {
-  id              String   @id @default(cuid())
-  companyId       String   @unique
-  welcomeMessage  String?  @db.Text
-  inputTimeout    Int      @default(5)
-  invalidMessage  String   @default("Invalid selection. Please try again.")
-  maxRetries      Int      @default(3)
-  menuItems       Json     @default("{}")  // key -> action mappings
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@index([companyId])
-}
-
-// ============================================
 // CUSTOM TOOLS - User-defined tool definitions
 // ============================================
 model CustomTool {
