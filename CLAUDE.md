@@ -1,4 +1,13 @@
-# Apex Sales Training AI - Project Conventions
+# Apex Sales Training AI - Project Reference
+
+**Type:** AI-Powered Sales Training Platform
+**Port:** 8090
+**URL Prefix:** /ApexSales
+**Status:** Active (Development)
+**Live URL:** https://www.apexsalestraining.net
+**Last Updated:** 2026-01-19
+
+---
 
 ## Project Overview
 Multi-tenant SaaS platform for AI-powered sales training across 17 industries. Features voice-enabled chat interface, real-time AI conversations, and comprehensive admin dashboard.
@@ -320,6 +329,59 @@ MICROSOFT_CLIENT_SECRET=...
 - `Subscription` - Platform subscription tracking (tier, status, Stripe IDs)
 - `Transaction` - Payment transaction records
 - `CompanyPaymentSettings` - Payment gateway credentials per company
+
+## Logging
+
+Comprehensive Winston logging with daily rotation:
+
+```
+src/utils/logger.ts
+```
+
+### Features
+- **Console Output**: Colorized logs in non-production environments
+- **File Rotation**: Daily log files with compression
+- **Error Logs**: Separate error-level log files (`error-%DATE%.log`) with 30-day retention
+- **Combined Logs**: All levels in combined files (`combined-%DATE%.log`) with 14-day retention
+- **Debug Logs**: Development-only debug logs with 7-day retention
+- **Stack Traces**: Full stack traces for errors
+- **File Size Limit**: 20MB max per file with automatic rotation
+- **Compression**: zippedArchive for rotated log files
+
+### Log Levels
+- `error` - Error conditions
+- `warn` - Warning conditions
+- `info` - Informational messages
+- `http` - HTTP request logging
+- `debug` - Debug information (dev only)
+
+### Helper Functions
+```typescript
+import { logInfo, logError, logWarn, logDebug, logHttp, logRequest, logAudit, logSecurity } from '../utils/logger';
+
+// Standard logging
+logInfo('Server started', { port: 8090 });
+logError('Database connection failed', error, { connectionString: '...' });
+
+// HTTP request logging
+logRequest({ method: 'POST', url: '/api/users', ip: req.ip, userId: req.user?.id });
+
+// Audit logging for compliance
+logAudit('USER_CREATED', { userId: newUser.id, companyId: company.id, ipAddress: req.ip });
+
+// Security event logging
+logSecurity('LOGIN_FAILED', { email, ipAddress: req.ip, riskLevel: 'medium' });
+```
+
+### Log Files Location
+```
+logs/
+├── error-2026-01-19.log      # Error logs only
+├── combined-2026-01-19.log   # All log levels
+└── debug-2026-01-19.log      # Debug logs (dev only)
+```
+
+---
 
 ## Troubleshooting
 
