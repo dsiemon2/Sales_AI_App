@@ -940,7 +940,7 @@ async function main() {
     });
     console.log(`  ✓ AI configuration with greeting created`);
 
-    // Create Payment Settings for this company with sample Stripe test keys
+    // Create Payment Settings for this company with live Stripe keys
     await prisma.companyPaymentSettings.upsert({
       where: { companyId: company.id },
       update: {},
@@ -948,11 +948,11 @@ async function main() {
         companyId: company.id,
         enabled: true,
         stripeEnabled: true,
-        stripePublishableKey: 'pk_test_51ABC123DEF456GHI789JKL0MNOPQRSTUVWXYZabcdefghijklmnop',
-        stripeSecretKey: 'sk_test_51ABC123DEF456GHI789JKL0MNOPQRSTUVWXYZabcdefghijklmnop',
-        stripeWebhookSecret: 'whsec_test_abcdefghijklmnopqrstuvwxyz123456',
+        stripePublishableKey: 'pk_test_YOUR_PUBLISHABLE_KEY',
+        stripeSecretKey: 'sk_test_YOUR_SECRET_KEY',
+        stripeWebhookSecret: '',
         stripeAchEnabled: false,
-        stripeTestMode: true,
+        stripeTestMode: false,
         paypalEnabled: false,
         paypalTestMode: true,
         squareEnabled: false,
