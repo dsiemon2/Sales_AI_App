@@ -1,0 +1,137 @@
+# GitHub Actions Workflow - Node.js Applications
+# Copy this file to: .github/workflows/deploy.yml in your repository
+#
+# For: Tutor AI, Nagging Wife AI, Sell Me A Pen, Recruiting AI, Boomer AI,
+#      Sales AI, Sell PRT, Sell Me A Car, SCO Digital Assistant, Salon, Mangy Dog Coffee
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  #-----------------------------------------
+  # JOB 1: Code Quality Checks (runs on all pushes and PRs)
+  #-----------------------------------------
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint --if-present
+        continue-on-error: true
+
+      - name: Run Prettier check
+        run: npm run format:check --if-present || npx prettier --check "src/**/*.{js,ts,jsx,tsx}" --ignore-unknown
+        continue-on-error: true
+
+      - name: Run TypeScript check
+        run: npm run type-check --if-present || npx tsc --noEmit
+        continue-on-error: true
+
+  #-----------------------------------------
+  # JOB 2: Run Tests (runs on all pushes and PRs)
+  #-----------------------------------------
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test --if-present
+        continue-on-error: true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            coverage/
+            test-results/
+          retention-days: 7
+
+  #-----------------------------------------
+  # JOB 3: Build Check (runs on all pushes and PRs)
+  #-----------------------------------------
+  build:
+    name: Build Check
+    runs-on: ubuntu-latest
+    needs: code-quality
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build --if-present
+
+  #-----------------------------------------
+  # JOB 4: Deploy to Production (only on push to main, not PRs)
+  #-----------------------------------------
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [code-quality, test, build]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/deploy/apps/${{ github.event.repository.name }}
+            /home/deploy/scripts/cicd/deploy-nodejs.sh /home/deploy/apps/${{ github.event.repository.name }}
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Deployment successful!"
+          else
+            echo "❌ Deployment failed!"
+          fi
